@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.0] - 2026-06-27
+
+### Fixed
+- Scroll vertical en la vista principal y en modales de sugerencias.
+
 ## [2.0.0] - 2026-06-27
 
 ### Changed
