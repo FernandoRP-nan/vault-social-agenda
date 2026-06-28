@@ -5,8 +5,6 @@ import { AgendaDB } from "./lib/agenda_db";
 import { AgendaUI } from "./lib/agenda_ui";
 import type { TaskBoardApi, TaskBoardPluginLike } from "./types";
 
-import "./lib/agenda_modals";
-
 const PLUGIN_ID = "vault-social-agenda";
 const PLUGIN_ROOT = `.obsidian/plugins/${PLUGIN_ID}`;
 const LEGACY_DB = ".obsidian/scripts/agenda_social.db";

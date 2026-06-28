@@ -11,9 +11,7 @@ import { Modal, Setting, SuggestModal, Notice } from "obsidian";
 
 /* agenda_modals.js - Modales con autocompletado para la agenda social */
 
-AgendaModals = AgendaModals || {};
-
-AgendaModals.injectFormStyles = () => {
+const injectFormStyles = () => {
     const ID = "estilos-agenda-form-v16";
     document.getElementById("estilos-agenda-form-v15")?.remove();
     document.getElementById("estilos-agenda-form-v10")?.remove();
@@ -736,7 +734,7 @@ class AgendaRangosIqModal extends Modal {
     }
 
     onOpen() {
-        AgendaModals.injectFormStyles();
+        injectFormStyles();
         const { contentEl } = this;
         contentEl.createEl("h2", { text: "⚙️ Leyendas de IQ", style: "margin: 0 0 12px; color: var(--text-accent);" });
         contentEl.createEl("p", {
@@ -1648,7 +1646,7 @@ class PersonaFormModal extends Modal {
     }
 
     onOpen() {
-        AgendaModals.injectFormStyles();
+        injectFormStyles();
         this._sincronizarDatosEdicion();
         const { contentEl } = this;
         contentEl.empty();
@@ -1991,7 +1989,7 @@ class ActividadFormModal extends Modal {
     }
 
     onOpen() {
-        AgendaModals.injectFormStyles();
+        injectFormStyles();
         const { contentEl } = this;
         const esEdicion = !!this.datos;
         const tipoInicial = this.ctx.tipoInicial || this.datos?.tipo || "evento";
@@ -2227,7 +2225,8 @@ class ActividadFormModal extends Modal {
     onClose() { this.contentEl.empty(); }
 }
 
-Object.assign(AgendaModals, {
+export const AgendaModals = {
+    injectFormStyles,
     PersonaFormModal,
     ActividadFormModal,
     AgendaConfirmModal,
@@ -2235,4 +2234,4 @@ Object.assign(AgendaModals, {
     AgendaPersonaSuggestModal,
     AgendaImagenSuggestModal,
     AgendaRangosIqModal
-});
+};
