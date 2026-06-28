@@ -4,33 +4,54 @@ Plugin local de Obsidian: agenda de contactos, relaciones, perfil cognitivo y ca
 
 ## Dependencia
 
-Requiere el plugin local **[vault-task-board](../vault-task-board)** para sincronizar actividades tipo tarea con el tablero Kanban.
+Requiere **[vault-task-board](https://github.com/FernandoRP-nan/vault-task-board)** activo para sincronizar actividades tipo tarea con el Kanban.
 
 ## Instalación local
 
-1. Instala y activa **vault-task-board** primero.
-2. Copia este repo en `.obsidian/plugins/vault-social-agenda/`.
-3. Asegura sql.js en `.obsidian/scripts/node_modules/` (ver README de task-board).
-4. Compila:
+> **Importante:** desarrolla **fuera del vault**. Si el repo con `node_modules` queda dentro de la bóveda, Obsidian puede colgarse al indexar.
+
+### 1. Clonar (fuera del vault)
 
 ```bash
-cd .obsidian/plugins/vault-social-agenda
+git clone https://github.com/FernandoRP-nan/vault-social-agenda.git
+```
+
+### 2. sql.js (una vez por vault)
+
+Ver [vault-task-board](https://github.com/FernandoRP-nan/vault-task-board#2-sqljs-una-vez-por-vault).
+
+### 3. Compilar
+
+```bash
+cd /ruta/a/Obsidian-Plugins/vault-social-agenda
 npm install
 npm run build
 ```
 
-5. Activa **Social Agenda** en complementos.
+### 4. Enlazar al vault
 
-## Datos
+```bash
+VAULT="/ruta/a/tu/vault/.obsidian/plugins"
+ln -sf /ruta/a/Obsidian-Plugins/vault-social-agenda "$VAULT/vault-social-agenda"
+```
 
-- `.obsidian/scripts/agenda_social.db`
-- Imágenes: `Adjuntos/Agenda Social/`
+### 5. Activar
+
+Activa **Task Board** primero, luego **Social Agenda**.
+
+## Uso
+
+- Icono 👥 en la cinta lateral
+- Paleta de comandos → **Abrir agenda social**
+
+Datos: `.obsidian/scripts/agenda_social.db` · Imágenes: `Adjuntos/Agenda Social/`
 
 ## Comunicación entre plugins
 
-Al cargar, busca `app.plugins.getPlugin('vault-task-board')` y conecta `window.TaskBoardBridge`.
-
-Escucha `vault-task-board:ready` y `vault-task-board:changed` para refrescar el dashboard.
+```
+vault-task-board  →  expone TaskBoardBridge
+vault-social-agenda  →  getPlugin('vault-task-board') + eventos :ready / :changed
+```
 
 ## Desarrollo
 
