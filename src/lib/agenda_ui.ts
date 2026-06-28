@@ -24,17 +24,6 @@ export const AgendaUI = {
             document.head.appendChild(el);
         }
         el.textContent = `
-            .workspace-leaf-content[data-type="vault-social-agenda-dashboard"] {
-                height: 100%; overflow: hidden; display: flex; flex-direction: column;
-            }
-            .workspace-leaf-content[data-type="vault-social-agenda-dashboard"] .view-content {
-                flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
-                -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-                padding: 16px 20px 28px; box-sizing: border-box;
-            }
-            .suggestion-container {
-                max-height: min(70vh, 520px); overflow-y: auto;
-            }
             .agenda-shell { display: flex; flex-direction: column; gap: 0; }
             .agenda-cabecera {
                 position: sticky; top: 0; z-index: 20;

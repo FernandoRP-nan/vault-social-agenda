@@ -3,6 +3,7 @@ import { setTaskBoardBridge } from "./bridge-registry";
 import { ScriptsRuntime } from "./runtime/scripts-runtime";
 import { AgendaDB } from "./lib/agenda_db";
 import { AgendaUI } from "./lib/agenda_ui";
+import { prepareScrollableView } from "./lib/view-scroll";
 import type { TaskBoardApi, TaskBoardPluginLike } from "./types";
 
 const PLUGIN_ID = "vault-social-agenda";
@@ -75,6 +76,8 @@ export default class SocialAgendaPlugin extends Plugin {
 }
 
 export class SocialAgendaView extends ItemView {
+    private scrollHost: HTMLElement | null = null;
+
     constructor(leaf: WorkspaceLeaf, private plugin: SocialAgendaPlugin) {
         super(leaf);
     }
@@ -96,13 +99,24 @@ export class SocialAgendaView extends ItemView {
     }
 
     async onClose(): Promise<void> {
+        this.scrollHost = null;
         this.containerEl.empty();
     }
 
+    private getScrollRoot(): HTMLElement {
+        if (!this.scrollHost?.isConnected) {
+            this.scrollHost = prepareScrollableView(
+                this,
+                VIEW_TYPE,
+                "vault-social-agenda-root"
+            );
+        }
+        return this.scrollHost;
+    }
+
     async refresh(): Promise<void> {
-        const root = this.containerEl;
+        const root = this.getScrollRoot();
         root.empty();
-        root.addClass("vault-social-agenda-root");
 
         this.plugin.conectarTaskBoard();
 

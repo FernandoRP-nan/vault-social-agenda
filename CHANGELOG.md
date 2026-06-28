@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.2.0] - 2026-06-27
+
+### Fixed
+- Scroll vertical en la vista principal con contenedor interno dedicado (`view-scroll`).
+
 ## [2.1.0] - 2026-06-27
 
 ### Fixed
