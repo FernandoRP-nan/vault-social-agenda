@@ -1,8 +1,19 @@
+/* agenda_modals.ts — migrado a módulo TS */
+// @ts-nocheck
+import { AgendaAstral } from "./agenda_astral";
+import { AgendaCalendario } from "./agenda_calendario";
+import { AgendaDB } from "./agenda_db";
+import { AgendaHistorial } from "./agenda_historial";
+import { AgendaPerfil } from "./agenda_perfil";
+import { AgendaPreferencias } from "./agenda_preferencias";
+import { AgendaUI } from "./agenda_ui";
+import { Modal, Setting, SuggestModal, Notice } from "obsidian";
+
 /* agenda_modals.js - Modales con autocompletado para la agenda social */
 
-window.AgendaModals = window.AgendaModals || {};
+AgendaModals = AgendaModals || {};
 
-window.AgendaModals.injectFormStyles = () => {
+AgendaModals.injectFormStyles = () => {
     const ID = "estilos-agenda-form-v16";
     document.getElementById("estilos-agenda-form-v15")?.remove();
     document.getElementById("estilos-agenda-form-v10")?.remove();
@@ -715,7 +726,7 @@ window.AgendaModals.injectFormStyles = () => {
     `;
 };
 
-class AgendaRangosIqModal extends window.Modal {
+class AgendaRangosIqModal extends Modal {
     constructor(app, db, dbPath, rangos, onSaved) {
         super(app);
         this.db = db;
@@ -725,7 +736,7 @@ class AgendaRangosIqModal extends window.Modal {
     }
 
     onOpen() {
-        window.AgendaModals.injectFormStyles();
+        AgendaModals.injectFormStyles();
         const { contentEl } = this;
         contentEl.createEl("h2", { text: "⚙️ Leyendas de IQ", style: "margin: 0 0 12px; color: var(--text-accent);" });
         contentEl.createEl("p", {
@@ -774,9 +785,9 @@ class AgendaRangosIqModal extends window.Modal {
                 max: parseInt(f.inMax.value, 10) || 0,
                 etiqueta: f.inEtq.value.trim()
             }));
-            const guardados = window.AgendaDB.guardarRangosIq(this.db, this.dbPath, nuevos);
+            const guardados = AgendaDB.guardarRangosIq(this.db, this.dbPath, nuevos);
             this.onSaved?.(guardados);
-            new window.Notice("✅ Leyendas de IQ actualizadas");
+            new Notice("✅ Leyendas de IQ actualizadas");
             this.close();
         };
     }
@@ -784,7 +795,7 @@ class AgendaRangosIqModal extends window.Modal {
     onClose() { this.contentEl.empty(); }
 }
 
-class AgendaListaSuggestModal extends window.SuggestModal {
+class AgendaListaSuggestModal extends SuggestModal {
     constructor(app, items, onSelect, opciones = {}) {
         super(app);
         this.items = items;
@@ -824,7 +835,7 @@ class AgendaListaSuggestModal extends window.SuggestModal {
     }
 }
 
-class AgendaPersonaSuggestModal extends window.SuggestModal {
+class AgendaPersonaSuggestModal extends SuggestModal {
     constructor(app, personas, getExcluidos, onSelect, opciones = {}) {
         super(app);
         this.personas = personas;
@@ -870,7 +881,7 @@ class AgendaPersonaSuggestModal extends window.SuggestModal {
     }
 }
 
-class AgendaConfirmModal extends window.Modal {
+class AgendaConfirmModal extends Modal {
     constructor(app, mensaje, onConfirm) {
         super(app);
         this.mensaje = mensaje;
@@ -893,11 +904,11 @@ class AgendaConfirmModal extends window.Modal {
     onClose() { this.contentEl.empty(); }
 }
 
-class AgendaImagenSuggestModal extends window.SuggestModal {
+class AgendaImagenSuggestModal extends SuggestModal {
     constructor(app, onSelect, opts = {}) {
         super(app);
         this.onSelect = onSelect;
-        this.carpeta = (opts.carpeta || window.AgendaDB.FOTO_CARPETA).replace(/^\/+|\/+$/g, "");
+        this.carpeta = (opts.carpeta || AgendaDB.FOTO_CARPETA).replace(/^\/+|\/+$/g, "");
         this.setPlaceholder(opts.placeholder || "🔍 Buscar imagen en la bóveda...");
     }
 
@@ -926,53 +937,53 @@ class AgendaImagenSuggestModal extends window.SuggestModal {
     }
 }
 
-class PersonaFormModal extends window.Modal {
+class PersonaFormModal extends Modal {
     constructor(app, db, dbPath, datosEdicion, onSaved) {
         super(app);
         this.db = db;
         this.dbPath = dbPath;
         this.datos = datosEdicion;
         this.onSaved = onSaved;
-        this.estado = window.AgendaDB.cargarEstado(db);
-        this.sugerencias = window.AgendaDB.obtenerSugerencias(this.estado);
+        this.estado = AgendaDB.cargarEstado(db);
+        this.sugerencias = AgendaDB.obtenerSugerencias(this.estado);
         this.listas = {
             alias: [...(datosEdicion?.alias || [])],
             grupos: [...(datosEdicion?.grupos || [])],
-            gustos: window.AgendaPreferencias.clonar(datosEdicion?.gustos),
-            disgustos: window.AgendaPreferencias.clonar(datosEdicion?.disgustos),
+            gustos: AgendaPreferencias.clonar(datosEdicion?.gustos),
+            disgustos: AgendaPreferencias.clonar(datosEdicion?.disgustos),
             puntos_destacables: [...(datosEdicion?.puntos_destacables || [])],
             habitos: [...(datosEdicion?.habitos || [])],
             debilidades: [...(datosEdicion?.debilidades || [])],
-            relaciones: window.AgendaDB.normalizarRelacionesExclusivas({
-                ...window.AgendaDB._relacionesVacias(),
+            relaciones: AgendaDB.normalizarRelacionesExclusivas({
+                ...AgendaDB._relacionesVacias(),
                 ...(datosEdicion?.relaciones || {})
             })
         };
-        this.inteligencias = window.AgendaPerfil.normalizarInteligencias(datosEdicion?.inteligencias);
-        this.rangosIq = window.AgendaDB.obtenerRangosIq(db);
+        this.inteligencias = AgendaPerfil.normalizarInteligencias(datosEdicion?.inteligencias);
+        this.rangosIq = AgendaDB.obtenerRangosIq(db);
         this.fotoRuta = datosEdicion?.foto || "";
         this._renderRelaciones = {};
     }
 
     _sincronizarDatosEdicion() {
         if (!this.datos?.id) return;
-        const fresca = window.AgendaDB.obtenerPersonaDb(this.db, this.datos.id);
+        const fresca = AgendaDB.obtenerPersonaDb(this.db, this.datos.id);
         if (!fresca) return;
         this.datos = fresca;
         this.listas = {
             alias: [...(fresca.alias || [])],
             grupos: [...(fresca.grupos || [])],
-            gustos: window.AgendaPreferencias.clonar(fresca.gustos),
-            disgustos: window.AgendaPreferencias.clonar(fresca.disgustos),
+            gustos: AgendaPreferencias.clonar(fresca.gustos),
+            disgustos: AgendaPreferencias.clonar(fresca.disgustos),
             puntos_destacables: [...(fresca.puntos_destacables || [])],
             habitos: [...(fresca.habitos || [])],
             debilidades: [...(fresca.debilidades || [])],
-            relaciones: window.AgendaDB.normalizarRelacionesExclusivas({
-                ...window.AgendaDB._relacionesVacias(),
+            relaciones: AgendaDB.normalizarRelacionesExclusivas({
+                ...AgendaDB._relacionesVacias(),
                 ...(fresca.relaciones || {})
             })
         };
-        this.inteligencias = window.AgendaPerfil.normalizarInteligencias(fresca.inteligencias);
+        this.inteligencias = AgendaPerfil.normalizarInteligencias(fresca.inteligencias);
         this.fotoRuta = fresca.foto || "";
     }
 
@@ -1159,12 +1170,12 @@ class PersonaFormModal extends window.Modal {
                 };
                 inRuta.value = this.fotoRuta;
                 preview.empty();
-                const url = window.AgendaUI._resolverUrlFoto(this.fotoRuta);
+                const url = AgendaUI._resolverUrlFoto(this.fotoRuta);
                 if (url) {
                     preview.createEl("img", { attr: { src: url, alt: "" } });
                 } else {
-                    preview.textContent = window.AgendaUI._iniciales(personaTmp.nombre);
-                    preview.style.background = window.AgendaUI._gradienteAvatar(personaTmp);
+                    preview.textContent = AgendaUI._iniciales(personaTmp.nombre);
+                    preview.style.background = AgendaUI._gradienteAvatar(personaTmp);
                 }
             };
 
@@ -1177,7 +1188,7 @@ class PersonaFormModal extends window.Modal {
             btns.createEl("button", { text: "📁 Bóveda" }).onclick = (e) => {
                 e.preventDefault();
                 new AgendaImagenSuggestModal(this.app, asignar, {
-                    carpeta: window.AgendaDB.FOTO_CARPETA,
+                    carpeta: AgendaDB.FOTO_CARPETA,
                     placeholder: "🔍 Imagen en la bóveda"
                 }).open();
             };
@@ -1190,7 +1201,7 @@ class PersonaFormModal extends window.Modal {
                     const archivo = input.files?.[0];
                     if (!archivo) return;
                     try {
-                        const carpeta = window.AgendaDB.FOTO_CARPETA;
+                        const carpeta = AgendaDB.FOTO_CARPETA;
                         const partes = carpeta.split("/").filter(Boolean);
                         let acum = "";
                         for (const parte of partes) {
@@ -1199,7 +1210,7 @@ class PersonaFormModal extends window.Modal {
                                 await this.app.vault.createFolder(acum);
                             }
                         }
-                        const base = window.AgendaDB._slugify(
+                        const base = AgendaDB._slugify(
                             typeof nombreRef === "function" ? nombreRef() : (nombreRef?.value || "persona")
                         ) || "persona";
                         const ext = archivo.name.includes(".")
@@ -1213,9 +1224,9 @@ class PersonaFormModal extends window.Modal {
                         const datos = new Uint8Array(await archivo.arrayBuffer());
                         await this.app.vault.createBinary(destino, datos);
                         asignar(destino);
-                        new window.Notice("📷 Foto guardada en la bóveda");
+                        new Notice("📷 Foto guardada en la bóveda");
                     } catch (err) {
-                        new window.Notice("❌ No se pudo guardar la foto: " + err.message);
+                        new Notice("❌ No se pudo guardar la foto: " + err.message);
                     }
                 };
                 input.click();
@@ -1231,7 +1242,7 @@ class PersonaFormModal extends window.Modal {
     }
 
     _campoRelacion(parent, label, tipo) {
-        const esCompartido = window.AgendaDB.esTipoCompartido(tipo);
+        const esCompartido = AgendaDB.esTipoCompartido(tipo);
         this._campo(parent, label, (wrap) => {
             const lista = wrap.createEl("div", { cls: "agenda-lista-wrap" });
             const chips = lista.createEl("div", { cls: "agenda-chips-row" });
@@ -1243,7 +1254,7 @@ class PersonaFormModal extends window.Modal {
                     this.listas.relaciones[tipo].splice(i, 1);
                     render();
                 },
-                (id) => window.AgendaDB.nombreDe(this.estado.personas, id)
+                (id) => AgendaDB.nombreDe(this.estado.personas, id)
             );
 
             acciones.createEl("button", { text: "👤 Vincular persona" }).onclick = (e) => {
@@ -1254,7 +1265,7 @@ class PersonaFormModal extends window.Modal {
                         const excl = new Set([this.datos?.id].filter(Boolean));
                         (this.listas.relaciones[tipo] || []).forEach(id => excl.add(id));
                         if (!esCompartido) {
-                            window.AgendaDB.idsVinculadosRelaciones(this.listas.relaciones, tipo)
+                            AgendaDB.idsVinculadosRelaciones(this.listas.relaciones, tipo)
                                 .forEach(id => excl.add(id));
                         }
                         return excl;
@@ -1265,7 +1276,7 @@ class PersonaFormModal extends window.Modal {
                                 this.listas.relaciones[tipo].push(p.id);
                             }
                         } else {
-                            this.listas.relaciones = window.AgendaDB.vincularRelacion(
+                            this.listas.relaciones = AgendaDB.vincularRelacion(
                                 this.listas.relaciones, tipo, p.id
                             );
                         }
@@ -1351,9 +1362,9 @@ class PersonaFormModal extends window.Modal {
 
         const actualizar = () => {
             const f = inFecha.value;
-            const signo = window.AgendaPerfil.calcularSignoZodiacal(f);
-            const tarot = window.AgendaPerfil.calcularCartaTarot(f);
-            const cumple = window.AgendaPerfil.calcularDiasParaCumpleanos(f);
+            const signo = AgendaPerfil.calcularSignoZodiacal(f);
+            const tarot = AgendaPerfil.calcularCartaTarot(f);
+            const cumple = AgendaPerfil.calcularDiasParaCumpleanos(f);
             txtSigno.textContent = signo || "—";
             txtTarot.textContent = tarot || "—";
             txtCumple.textContent = cumple || "—";
@@ -1387,7 +1398,7 @@ class PersonaFormModal extends window.Modal {
         });
 
         const actualizar = () => {
-            const evalCarta = window.AgendaPerfil.evaluarCartaAstral(datosCarta());
+            const evalCarta = AgendaPerfil.evaluarCartaAstral(datosCarta());
             contResumen.empty();
             if (evalCarta.listo) {
                 txtCarta.textContent = evalCarta.horaExacta
@@ -1395,8 +1406,8 @@ class PersonaFormModal extends window.Modal {
                     : "Calculada · carta solar (sin casas)";
                 badgeCarta.classList.remove("vacio");
                 badgeCarta.classList.add("agenda-auto-badge--carta-lista");
-                if (window.AgendaAstral?.renderResumenEditor) {
-                    window.AgendaAstral.renderResumenEditor(contResumen, datosCarta());
+                if (AgendaAstral?.renderResumenEditor) {
+                    AgendaAstral.renderResumenEditor(contResumen, datosCarta());
                 } else {
                     contResumen.createEl("p", {
                         cls: "agenda-carta-editor-vacio",
@@ -1461,16 +1472,16 @@ class PersonaFormModal extends window.Modal {
             btnGeo.disabled = true;
             btnGeo.textContent = "⏳ Buscando…";
             try {
-                const geo = await window.AgendaPerfil.geocodificarLugar(
+                const geo = await AgendaPerfil.geocodificarLugar(
                     ciudad, inPais.value.trim(), inEstado.value.trim(), this.app
                 );
                 if (aplicarGeo(geo)) {
                     this._ultimaGeoConsulta = clave;
                     if (!silencioso) {
-                        new window.Notice(`📍 ${window.AgendaPerfil.etiquetaLugarGeocodificado(geo)}`);
+                        new Notice(`📍 ${AgendaPerfil.etiquetaLugarGeocodificado(geo)}`);
                     }
                 } else if (!silencioso) {
-                    new window.Notice("No se encontraron coordenadas. Prueba añadir estado/provincia y país.");
+                    new Notice("No se encontraron coordenadas. Prueba añadir estado/provincia y país.");
                 }
             } finally {
                 buscando = false;
@@ -1571,11 +1582,11 @@ class PersonaFormModal extends window.Modal {
             style: "margin: 0; font-size: 0.82em; color: var(--text-muted); font-style: italic;"
         });
         const grid = parent.createEl("div", { cls: "agenda-intel-grid" });
-        window.AgendaPerfil.TIPOS_INTELIGENCIA.forEach(tipo => {
+        AgendaPerfil.TIPOS_INTELIGENCIA.forEach(tipo => {
             const item = grid.createEl("div", { cls: "agenda-intel-item" });
             item.createEl("label", { text: tipo.l });
             const sel = item.createEl("select", { cls: "agenda-select-perfil" });
-            window.AgendaPerfil.NIVELES_INTELIGENCIA.forEach(o =>
+            AgendaPerfil.NIVELES_INTELIGENCIA.forEach(o =>
                 sel.createEl("option", { text: o.l, value: o.v }));
             if (this.inteligencias[tipo.id]) sel.value = this.inteligencias[tipo.id];
             sel.onchange = () => { this.inteligencias[tipo.id] = sel.value; };
@@ -1594,7 +1605,7 @@ class PersonaFormModal extends window.Modal {
             return;
         }
 
-        const entradas = window.AgendaHistorial.obtener(this.db, personaId);
+        const entradas = AgendaHistorial.obtener(this.db, personaId);
         if (!entradas.length) {
             container.createEl("p", {
                 text: "Sin cambios registrados aún.",
@@ -1609,14 +1620,14 @@ class PersonaFormModal extends window.Modal {
             item.createEl("button", { text: "🗑️", cls: "agenda-historial-borrar", attr: { title: "Eliminar entrada" } })
                 .onclick = () => {
                     new AgendaConfirmModal(this.app, "¿Eliminar esta entrada del historial?", () => {
-                        window.AgendaHistorial.eliminar(this.db, this.dbPath, ent.id);
+                        AgendaHistorial.eliminar(this.db, this.dbPath, ent.id);
                         this._renderHistorial(container, personaId);
-                        new window.Notice("Entrada eliminada del historial");
+                        new Notice("Entrada eliminada del historial");
                     }).open();
                 };
 
             const meta = item.createEl("div", { cls: "agenda-historial-meta" });
-            meta.setText(`${window.AgendaHistorial.formatearFecha(ent.fecha)} · ${window.AgendaHistorial.etiquetaCampo(ent.campo)}`);
+            meta.setText(`${AgendaHistorial.formatearFecha(ent.fecha)} · ${AgendaHistorial.etiquetaCampo(ent.campo)}`);
 
             const diff = item.createEl("div", { cls: "agenda-historial-diff" });
             if (ent.campo === "_creacion") {
@@ -1637,7 +1648,7 @@ class PersonaFormModal extends window.Modal {
     }
 
     onOpen() {
-        window.AgendaModals.injectFormStyles();
+        AgendaModals.injectFormStyles();
         this._sincronizarDatosEdicion();
         const { contentEl } = this;
         contentEl.empty();
@@ -1681,7 +1692,7 @@ class PersonaFormModal extends window.Modal {
         const { input: selMbti } = this._campo(gridPerfilPsico, "MBTI", w => {
             const sel = w.createEl("select", { cls: "agenda-select-perfil" });
             sel.createEl("option", { text: "— Sin definir —", value: "" });
-            window.AgendaPerfil.MBTI_OPCIONES.filter(Boolean).forEach(t =>
+            AgendaPerfil.MBTI_OPCIONES.filter(Boolean).forEach(t =>
                 sel.createEl("option", { text: t, value: t }));
             return sel;
         });
@@ -1689,15 +1700,15 @@ class PersonaFormModal extends window.Modal {
 
         const { input: selEnea } = this._campo(gridPerfilPsico, "Eneagrama", w => {
             const sel = w.createEl("select", { cls: "agenda-select-perfil" });
-            window.AgendaPerfil.ENEAGRAMA_OPCIONES.forEach(o =>
+            AgendaPerfil.ENEAGRAMA_OPCIONES.forEach(o =>
                 sel.createEl("option", { text: o.l, value: o.v }));
             return sel;
         });
         if (esEdicion && this.datos.eneagrama) selEnea.value = this.datos.eneagrama;
 
         const colorInicial = esEdicion
-            ? window.AgendaPerfil.resolverColorPersona(this.datos)
-            : window.AgendaPerfil.COLOR_DEFECTO;
+            ? AgendaPerfil.resolverColorPersona(this.datos)
+            : AgendaPerfil.COLOR_DEFECTO;
         const { input: inColor } = this._campo(secPerfil, "Color favorito", w => {
             const fila = w.createEl("div", { cls: "agenda-campo-color" });
             const picker = fila.createEl("input", { type: "color" });
@@ -1712,12 +1723,12 @@ class PersonaFormModal extends window.Modal {
                 ? this.datos.color_favorito
                 : "";
             const sync = () => {
-                const v = window.AgendaPerfil.validarColorHex(hex.value) || picker.value;
+                const v = AgendaPerfil.validarColorHex(hex.value) || picker.value;
                 picker.value = v;
                 muestra.style.background = v;
             };
             picker.oninput = () => { hex.value = picker.value; sync(); };
-            hex.oninput = () => { if (window.AgendaPerfil.validarColorHex(hex.value)) sync(); };
+            hex.oninput = () => { if (AgendaPerfil.validarColorHex(hex.value)) sync(); };
             sync();
             hex.dataset.colorPicker = "hex";
             picker.dataset.colorPicker = "picker";
@@ -1834,7 +1845,7 @@ class PersonaFormModal extends window.Modal {
         });
 
         const secSocial = this._seccion(sections.contacto, "📅 Actividad social");
-        const act = window.AgendaDB.normalizarActividad(esEdicion ? this.datos.actividad_social : {});
+        const act = AgendaDB.normalizarActividad(esEdicion ? this.datos.actividad_social : {});
         const actWrap = secSocial.createEl("div", { cls: "agenda-actividad-unica" });
         const selTipoAct = actWrap.createEl("select");
         [{ v: "dias", t: "Días" }, { v: "semanas", t: "Semanas" }, { v: "meses", t: "Meses" }].forEach(o => {
@@ -1846,7 +1857,7 @@ class PersonaFormModal extends window.Modal {
 
         const secCognitivo = this._seccion(sections.perfil, "🧩 Perfil cognitivo");
         this._campoLista(secCognitivo, "Puntos destacables", "puntos_destacables",
-            [...new Set([...(this.sugerencias.puntos_destacables || []), ...window.AgendaPerfil.PUNTOS_SUGERIDOS])]);
+            [...new Set([...(this.sugerencias.puntos_destacables || []), ...AgendaPerfil.PUNTOS_SUGERIDOS])]);
         const { inMin: inIqMin, inMax: inIqMax } = this._campoIq(
             secCognitivo,
             esEdicion ? this.datos.iq_min : 0,
@@ -1910,7 +1921,7 @@ class PersonaFormModal extends window.Modal {
             style: "background: var(--interactive-accent); color: var(--text-on-accent); border: none; padding: 10px 22px; border-radius: 8px; font-weight: bold; cursor: pointer;"
         }).onclick = async () => {
             try {
-                window.AgendaDB.upsertPersona(this.db, this.dbPath, {
+                AgendaDB.upsertPersona(this.db, this.dbPath, {
                     id: esEdicion ? this.datos.id : "",
                     nombre: inNombre.value.trim(),
                     alias: this.listas.alias,
@@ -1952,11 +1963,11 @@ class PersonaFormModal extends window.Modal {
                     },
                     notas: inNotas.value.trim()
                 });
-                new window.Notice(esEdicion ? "✅ Persona actualizada" : "✅ Persona registrada");
+                new Notice(esEdicion ? "✅ Persona actualizada" : "✅ Persona registrada");
                 this.onSaved();
                 this.close();
             } catch (err) {
-                new window.Notice("❌ " + err.message);
+                new Notice("❌ " + err.message);
             }
         };
     }
@@ -1964,7 +1975,7 @@ class PersonaFormModal extends window.Modal {
     onClose() { this.contentEl.empty(); }
 }
 
-class ActividadFormModal extends window.Modal {
+class ActividadFormModal extends Modal {
     constructor(app, db, dbPath, ctx, onSaved) {
         super(app);
         this.db = db;
@@ -1972,7 +1983,7 @@ class ActividadFormModal extends window.Modal {
         this.ctx = ctx || {};
         this.datos = ctx.datosEdicion || null;
         this.onSaved = onSaved;
-        this.estado = window.AgendaDB.cargarEstado(db, ctx.syncOpts || {});
+        this.estado = AgendaDB.cargarEstado(db, ctx.syncOpts || {});
         this.listas = {
             persona_ids: [...(this.datos?.persona_ids || ctx.personaIds || [])],
             grupos: [...(this.datos?.grupos || [])]
@@ -1980,7 +1991,7 @@ class ActividadFormModal extends window.Modal {
     }
 
     onOpen() {
-        window.AgendaModals.injectFormStyles();
+        AgendaModals.injectFormStyles();
         const { contentEl } = this;
         const esEdicion = !!this.datos;
         const tipoInicial = this.ctx.tipoInicial || this.datos?.tipo || "evento";
@@ -2052,7 +2063,7 @@ class ActividadFormModal extends window.Modal {
         const iconGrid = secIcono.createEl("div", { cls: "agenda-icono-grid" });
         const pintarIconos = () => {
             iconGrid.empty();
-            window.AgendaCalendario.ICONOS.forEach(ic => {
+            AgendaCalendario.ICONOS.forEach(ic => {
                 const btn = iconGrid.createEl("button", {
                     type: "button",
                     cls: `agenda-icono-btn${ic === iconoSel ? " agenda-icono-btn--activo" : ""}`,
@@ -2076,7 +2087,7 @@ class ActividadFormModal extends window.Modal {
                 pill.classList.toggle("agenda-estado-pill--activo", v === estadoSel);
             });
         };
-        window.AgendaCalendario.ESTADOS.forEach(e => {
+        AgendaCalendario.ESTADOS.forEach(e => {
             const pill = estadoPills.createEl("button", {
                 type: "button",
                 cls: "agenda-estado-pill",
@@ -2093,7 +2104,7 @@ class ActividadFormModal extends window.Modal {
 
         const secVinculos = this._seccionAct(colFull, "👥 Vinculación");
         this._campoListaAct(secVinculos, "Personas", "persona_ids",
-            this.estado.personas.map(p => p.nombre), id => window.AgendaDB.nombreDe(this.estado.personas, id));
+            this.estado.personas.map(p => p.nombre), id => AgendaDB.nombreDe(this.estado.personas, id));
         this._campoListaAct(secVinculos, "Grupos", "grupos", this.estado.vocabulario.grupos || []);
 
         const secNotas = this._seccionAct(colFull, "📝 Notas");
@@ -2107,8 +2118,8 @@ class ActividadFormModal extends window.Modal {
         if (esEdicion) {
             acciones.createEl("button", { text: "🗑️ Eliminar" }).onclick = () => {
                 new AgendaConfirmModal(this.app, "¿Eliminar esta actividad?", () => {
-                    window.AgendaDB.eliminarActividad(this.db, this.dbPath, this.datos.id, this.ctx.syncOpts || {});
-                    new window.Notice("Eliminada");
+                    AgendaDB.eliminarActividad(this.db, this.dbPath, this.datos.id, this.ctx.syncOpts || {});
+                    new Notice("Eliminada");
                     this.onSaved();
                     this.close();
                 }).open();
@@ -2120,7 +2131,7 @@ class ActividadFormModal extends window.Modal {
             style: "background: var(--interactive-accent); color: var(--text-on-accent); border: none; padding: 10px 22px; border-radius: 8px; font-weight: bold; cursor: pointer;"
         }).onclick = () => {
             try {
-                const guardada = window.AgendaDB.upsertActividad(this.db, this.dbPath, {
+                const guardada = AgendaDB.upsertActividad(this.db, this.dbPath, {
                     id: esEdicion ? this.datos.id : "",
                     titulo: inTitulo.value.trim(),
                     tipo: tipoSel,
@@ -2135,15 +2146,15 @@ class ActividadFormModal extends window.Modal {
                     tarea_kanban_id: esEdicion ? this.datos.tarea_kanban_id : 0
                 }, { personas: this.estado.personas, ...(this.ctx.syncOpts || {}) });
                 if (guardada.tipo === "tarea") {
-                    const proyecto = window.AgendaCalendario.resolverProyecto(guardada, this.estado.personas);
-                    new window.Notice(`✅ Tarea en Organizador · proyecto «${proyecto}»`);
+                    const proyecto = AgendaCalendario.resolverProyecto(guardada, this.estado.personas);
+                    new Notice(`✅ Tarea en Organizador · proyecto «${proyecto}»`);
                 } else {
-                    new window.Notice("✅ Evento guardado");
+                    new Notice("✅ Evento guardado");
                 }
                 this.onSaved();
                 this.close();
             } catch (err) {
-                new window.Notice("❌ " + err.message);
+                new Notice("❌ " + err.message);
             }
         };
     }
@@ -2216,7 +2227,7 @@ class ActividadFormModal extends window.Modal {
     onClose() { this.contentEl.empty(); }
 }
 
-Object.assign(window.AgendaModals, {
+Object.assign(AgendaModals, {
     PersonaFormModal,
     ActividadFormModal,
     AgendaConfirmModal,

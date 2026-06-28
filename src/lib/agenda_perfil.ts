@@ -1,6 +1,10 @@
+/* agenda_perfil.ts — migrado a módulo TS */
+// @ts-nocheck
+import { AgendaAstral } from "./agenda_astral";
+
 /* agenda_perfil.js - MBTI, eneagrama y cálculos astrológicos/tarot */
 
-window.AgendaPerfil = {
+export const AgendaPerfil = {
     MBTI_OPCIONES: [
         "", "INTJ", "INTP", "ENTJ", "ENTP",
         "INFJ", "INFP", "ENFJ", "ENFP",
@@ -74,7 +78,7 @@ window.AgendaPerfil = {
             suma = String(suma).split("").map(Number).reduce((a, b) => a + b, 0);
         }
         if (suma === 0 || suma === 22) return "0 — El Loco";
-        const nombre = window.AgendaPerfil._ARCANOS_MAYORES[suma];
+        const nombre = AgendaPerfil._ARCANOS_MAYORES[suma];
         const romanos = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
             "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI"];
         return `${romanos[suma]} — ${nombre}`;
@@ -117,8 +121,8 @@ window.AgendaPerfil = {
     },
 
     formatearCoordenadas: (lat, lon) => {
-        const la = window.AgendaPerfil.validarLatitud(lat);
-        const lo = window.AgendaPerfil.validarLongitud(lon);
+        const la = AgendaPerfil.validarLatitud(lat);
+        const lo = AgendaPerfil.validarLongitud(lon);
         if (la == null || lo == null) return "";
         return `${la}°, ${lo}°`;
     },
@@ -155,7 +159,7 @@ window.AgendaPerfil = {
         return na === nb || na.includes(nb) || nb.includes(na);
     },
 
-    _coincidePais: (a, b) => window.AgendaPerfil._coincideTexto(a, b),
+    _coincidePais: (a, b) => AgendaPerfil._coincideTexto(a, b),
 
     formatearLugarNacimiento: (persona) =>
         [persona?.ciudad, persona?.estado_nacimiento, persona?.pais_nacimiento].filter(Boolean).join(", "),
@@ -176,9 +180,9 @@ window.AgendaPerfil = {
         if (!results?.length) return null;
         const puntaje = (r) => {
             let s = 0;
-            if (window.AgendaPerfil._coincideTexto(r.name, ciudad)) s += 12;
-            if (estado && window.AgendaPerfil._coincideTexto(r.admin1, estado)) s += 10;
-            if (pais && window.AgendaPerfil._coincideTexto(r.country, pais)) s += 8;
+            if (AgendaPerfil._coincideTexto(r.name, ciudad)) s += 12;
+            if (estado && AgendaPerfil._coincideTexto(r.admin1, estado)) s += 10;
+            if (pais && AgendaPerfil._coincideTexto(r.country, pais)) s += 8;
             if (r.population) s += Math.min(4, Math.log10(r.population + 1));
             return s;
         };
@@ -193,12 +197,12 @@ window.AgendaPerfil = {
 
         const paisTxt = String(pais || "").trim();
         const estadoTxt = String(estado || "").trim();
-        const consultas = window.AgendaPerfil._consultasGeocodificacion(city, estadoTxt, paisTxt);
+        const consultas = AgendaPerfil._consultasGeocodificacion(city, estadoTxt, paisTxt);
 
         for (const query of consultas) {
             const cacheKey = query.toLowerCase();
-            if (window.AgendaPerfil._geoCache.has(cacheKey)) {
-                const cached = window.AgendaPerfil._geoCache.get(cacheKey);
+            if (AgendaPerfil._geoCache.has(cacheKey)) {
+                const cached = AgendaPerfil._geoCache.get(cacheKey);
                 if (cached) return cached;
             }
 
@@ -206,21 +210,21 @@ window.AgendaPerfil = {
                 + `?name=${encodeURIComponent(query)}&count=12&language=es&format=json`;
 
             try {
-                const json = await window.AgendaPerfil._cargarJsonUrl(url, app);
+                const json = await AgendaPerfil._cargarJsonUrl(url, app);
                 const results = json?.results || [];
-                const best = window.AgendaPerfil._elegirMejorGeo(results, city, estadoTxt, paisTxt);
+                const best = AgendaPerfil._elegirMejorGeo(results, city, estadoTxt, paisTxt);
                 if (!best) continue;
 
                 const out = {
-                    latitud: window.AgendaPerfil.validarLatitud(best.latitude),
-                    longitud: window.AgendaPerfil.validarLongitud(best.longitude),
+                    latitud: AgendaPerfil.validarLatitud(best.latitude),
+                    longitud: AgendaPerfil.validarLongitud(best.longitude),
                     zona_horaria: best.timezone || "",
                     pais_nacimiento: best.country || "",
                     estado_nacimiento: best.admin1 || "",
                     nombre: best.name || city,
                     region: best.admin1 || ""
                 };
-                window.AgendaPerfil._geoCache.set(cacheKey, out);
+                AgendaPerfil._geoCache.set(cacheKey, out);
                 return out;
             } catch (err) {
                 console.error("Geocodificación:", err);
@@ -238,11 +242,11 @@ window.AgendaPerfil = {
         const faltantes = [];
         if (!persona?.fecha_nacimiento) faltantes.push("fecha de nacimiento");
         const horaDesconocida = !!persona?.hora_nacimiento_desconocida;
-        if (!horaDesconocida && !window.AgendaPerfil.validarHoraNacimiento(persona?.hora_nacimiento)) {
+        if (!horaDesconocida && !AgendaPerfil.validarHoraNacimiento(persona?.hora_nacimiento)) {
             faltantes.push("hora de nacimiento");
         }
-        if (window.AgendaPerfil.validarLatitud(persona?.latitud) == null) faltantes.push("latitud");
-        if (window.AgendaPerfil.validarLongitud(persona?.longitud) == null) faltantes.push("longitud");
+        if (AgendaPerfil.validarLatitud(persona?.latitud) == null) faltantes.push("latitud");
+        if (AgendaPerfil.validarLongitud(persona?.longitud) == null) faltantes.push("longitud");
         if (!(persona?.zona_horaria || "").trim()) faltantes.push("zona horaria");
         return {
             listo: faltantes.length === 0,
@@ -252,28 +256,28 @@ window.AgendaPerfil = {
     },
 
     obtenerDatosNatal: (persona) => {
-        const evalCarta = window.AgendaPerfil.evaluarCartaAstral(persona);
+        const evalCarta = AgendaPerfil.evaluarCartaAstral(persona);
         if (!evalCarta.listo) return null;
         return {
             fecha: persona.fecha_nacimiento,
             hora: evalCarta.horaExacta
-                ? window.AgendaPerfil.validarHoraNacimiento(persona.hora_nacimiento)
+                ? AgendaPerfil.validarHoraNacimiento(persona.hora_nacimiento)
                 : null,
             horaDesconocida: !evalCarta.horaExacta,
-            latitud: window.AgendaPerfil.validarLatitud(persona.latitud),
-            longitud: window.AgendaPerfil.validarLongitud(persona.longitud),
+            latitud: AgendaPerfil.validarLatitud(persona.latitud),
+            longitud: AgendaPerfil.validarLongitud(persona.longitud),
             zonaHoraria: (persona.zona_horaria || "").trim(),
-            lugar: window.AgendaPerfil.formatearLugarNacimiento(persona)
+            lugar: AgendaPerfil.formatearLugarNacimiento(persona)
         };
     },
 
     enriquecer: (persona) => {
-        const signo = window.AgendaPerfil.calcularSignoZodiacal(persona.fecha_nacimiento);
-        const tarot = window.AgendaPerfil.calcularCartaTarot(persona.fecha_nacimiento);
-        const cumple = window.AgendaPerfil.calcularDiasParaCumpleanos(persona.fecha_nacimiento);
-        const cartaAstral = window.AgendaPerfil.evaluarCartaAstral(persona);
-        const cartaNatal = cartaAstral.listo && window.AgendaAstral
-            ? window.AgendaAstral.calcularCartaNatal(persona)
+        const signo = AgendaPerfil.calcularSignoZodiacal(persona.fecha_nacimiento);
+        const tarot = AgendaPerfil.calcularCartaTarot(persona.fecha_nacimiento);
+        const cumple = AgendaPerfil.calcularDiasParaCumpleanos(persona.fecha_nacimiento);
+        const cartaAstral = AgendaPerfil.evaluarCartaAstral(persona);
+        const cartaNatal = cartaAstral.listo && AgendaAstral
+            ? AgendaAstral.calcularCartaNatal(persona)
             : null;
         return { ...persona, signo_zodiacal: signo, carta_tarot: tarot, dias_para_cumple: cumple, carta_astral: cartaAstral, carta_natal: cartaNatal };
     },
@@ -293,8 +297,8 @@ window.AgendaPerfil = {
     ordenTarot: (carta) => {
         if (!carta) return 99;
         if (carta.startsWith("0")) return 0;
-        for (let i = 1; i < window.AgendaPerfil._ARCANOS_MAYORES.length; i++) {
-            const nombre = window.AgendaPerfil._ARCANOS_MAYORES[i];
+        for (let i = 1; i < AgendaPerfil._ARCANOS_MAYORES.length; i++) {
+            const nombre = AgendaPerfil._ARCANOS_MAYORES[i];
             if (nombre && carta.includes(nombre)) return i;
         }
         return 99;
@@ -302,7 +306,7 @@ window.AgendaPerfil = {
 
     etiquetaEneagrama: (valor) => {
         if (!valor) return "";
-        const op = window.AgendaPerfil.ENEAGRAMA_OPCIONES.find(o => o.v === valor);
+        const op = AgendaPerfil.ENEAGRAMA_OPCIONES.find(o => o.v === valor);
         return op ? op.l : valor;
     },
 
@@ -320,7 +324,7 @@ window.AgendaPerfil = {
     },
 
     _colorPorNombre: (nombre) => {
-        const paleta = window.AgendaPerfil.PALETA_DEFECTO;
+        const paleta = AgendaPerfil.PALETA_DEFECTO;
         let hash = 0;
         for (let i = 0; i < (nombre || "").length; i++) {
             hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
@@ -329,13 +333,13 @@ window.AgendaPerfil = {
     },
 
     resolverColorPersona: (persona) => {
-        const favorito = window.AgendaPerfil.validarColorHex(persona?.color_favorito);
+        const favorito = AgendaPerfil.validarColorHex(persona?.color_favorito);
         if (favorito) return favorito;
-        return window.AgendaPerfil._colorPorNombre(persona?.nombre || "?");
+        return AgendaPerfil._colorPorNombre(persona?.nombre || "?");
     },
 
     ajustarColor: (hex, factor) => {
-        const h = window.AgendaPerfil.validarColorHex(hex) || window.AgendaPerfil.COLOR_DEFECTO;
+        const h = AgendaPerfil.validarColorHex(hex) || AgendaPerfil.COLOR_DEFECTO;
         const n = parseInt(h.slice(1), 16);
         const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
         const mix = (c) => Math.max(0, Math.min(255, Math.round(c * factor)));
@@ -343,7 +347,7 @@ window.AgendaPerfil = {
     },
 
     colorTextoContraste: (hex) => {
-        const h = window.AgendaPerfil.validarColorHex(hex) || window.AgendaPerfil.COLOR_DEFECTO;
+        const h = AgendaPerfil.validarColorHex(hex) || AgendaPerfil.COLOR_DEFECTO;
         const n = parseInt(h.slice(1), 16);
         const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
         const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
@@ -396,11 +400,11 @@ window.AgendaPerfil = {
 
     normalizarInteligencias: (val) => {
         const out = {};
-        window.AgendaPerfil.TIPOS_INTELIGENCIA.forEach(t => { out[t.id] = ""; });
+        AgendaPerfil.TIPOS_INTELIGENCIA.forEach(t => { out[t.id] = ""; });
         if (!val || typeof val !== "object") return out;
         Object.entries(val).forEach(([k, v]) => {
             const nivel = String(v || "").trim().toUpperCase();
-            if (window.AgendaPerfil.NIVELES_INTELIGENCIA.some(n => n.v === nivel)) {
+            if (AgendaPerfil.NIVELES_INTELIGENCIA.some(n => n.v === nivel)) {
                 out[k] = nivel;
             }
         });
@@ -408,8 +412,8 @@ window.AgendaPerfil = {
     },
 
     serializarInteligencias: (val) => {
-        const n = window.AgendaPerfil.normalizarInteligencias(val);
-        return window.AgendaPerfil.TIPOS_INTELIGENCIA
+        const n = AgendaPerfil.normalizarInteligencias(val);
+        return AgendaPerfil.TIPOS_INTELIGENCIA
             .filter(t => n[t.id])
             .map(t => `${t.l}: ${n[t.id]}`)
             .join(" · ") || "(vacío)";
@@ -428,13 +432,13 @@ window.AgendaPerfil = {
         const b = parseInt(max, 10) || 0;
         if (a <= 0 && b <= 0) return "";
         const centro = a > 0 && b > 0 ? Math.round((a + b) / 2) : (a || b);
-        const lista = rangos?.length ? rangos : window.AgendaPerfil.RANGOS_IQ_DEFECTO;
+        const lista = rangos?.length ? rangos : AgendaPerfil.RANGOS_IQ_DEFECTO;
         const match = lista.find(r => centro >= r.min && centro <= r.max);
         return match ? match.etiqueta : "";
     },
 
     normalizarRangosIq: (val) => {
-        const base = window.AgendaPerfil.RANGOS_IQ_DEFECTO.map(r => ({ ...r }));
+        const base = AgendaPerfil.RANGOS_IQ_DEFECTO.map(r => ({ ...r }));
         if (!Array.isArray(val)) return base;
         const limpios = val.map(r => ({
             min: Math.max(0, parseInt(r?.min, 10) || 0),

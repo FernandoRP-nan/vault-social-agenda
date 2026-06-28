@@ -1,6 +1,16 @@
+/* agenda_ui.ts — migrado a módulo TS */
+// @ts-nocheck
+import { AgendaAstral } from "./agenda_astral";
+import { AgendaCalendario } from "./agenda_calendario";
+import { AgendaDB } from "./agenda_db";
+import { AgendaModals } from "./agenda_modals";
+import { AgendaPerfil } from "./agenda_perfil";
+import { AgendaPreferencias } from "./agenda_preferencias";
+import { Modal, Setting, SuggestModal, Notice } from "obsidian";
+
 /* agenda_ui.js - Dashboard visual de la agenda social */
 
-window.AgendaUI = {
+export const AgendaUI = {
     injectStyles: () => {
         const ID = "estilos-agenda-social-v12";
         document.getElementById("estilos-agenda-social-v11")?.remove();
@@ -262,18 +272,18 @@ window.AgendaUI = {
     _sanitizarMermaid: (texto) =>
         String(texto).replace(/["\[\]{}|#;]/g, " ").replace(/\n/g, " ").trim(),
 
-    _colorAvatar: (persona) => window.AgendaPerfil.resolverColorPersona(
+    _colorAvatar: (persona) => AgendaPerfil.resolverColorPersona(
         typeof persona === "string" ? { nombre: persona } : persona
     ),
 
     _gradienteAvatar: (persona) => {
-        const base = window.AgendaPerfil.resolverColorPersona(persona);
-        const tono = window.AgendaPerfil.ajustarColor(base, 0.72);
+        const base = AgendaPerfil.resolverColorPersona(persona);
+        const tono = AgendaPerfil.ajustarColor(base, 0.72);
         return `linear-gradient(135deg, ${base}, ${tono})`;
     },
 
     _estanRelacionados: (a, b, tipoRel = "") => {
-        const tipos = tipoRel ? [tipoRel] : window.AgendaDB.TIPOS_RELACION;
+        const tipos = tipoRel ? [tipoRel] : AgendaDB.TIPOS_RELACION;
         return tipos.some(t =>
             (a.relaciones?.[t] || []).includes(b.id) || (b.relaciones?.[t] || []).includes(a.id)
         );
@@ -293,7 +303,7 @@ window.AgendaUI = {
             eneagrama: [...enea].sort((a, b) => a.localeCompare(b, "es", { numeric: true })),
             signos: [...signos].sort((a, b) => a.localeCompare(b, "es")),
             tarots: [...tarots].sort((a, b) =>
-                window.AgendaPerfil.ordenTarot(a) - window.AgendaPerfil.ordenTarot(b)
+                AgendaPerfil.ordenTarot(a) - AgendaPerfil.ordenTarot(b)
             ),
             grupos: [...grupos].sort((a, b) => a.localeCompare(b, "es"))
         };
@@ -321,7 +331,7 @@ window.AgendaUI = {
     },
 
     _pintarAvatar: (el, persona) => {
-        const url = window.AgendaUI._resolverUrlFoto(persona.foto);
+        const url = AgendaUI._resolverUrlFoto(persona.foto);
         el.empty();
         el.classList.remove("agenda-avatar--foto");
         if (url) {
@@ -329,38 +339,38 @@ window.AgendaUI = {
             el.createEl("img", { attr: { src: url, alt: persona.nombre || "" } });
             return;
         }
-        el.textContent = window.AgendaUI._iniciales(persona.nombre);
-        el.style.background = window.AgendaUI._gradienteAvatar(persona);
-        el.style.color = window.AgendaPerfil.colorTextoContraste(
-            window.AgendaPerfil.resolverColorPersona(persona)
+        el.textContent = AgendaUI._iniciales(persona.nombre);
+        el.style.background = AgendaUI._gradienteAvatar(persona);
+        el.style.color = AgendaPerfil.colorTextoContraste(
+            AgendaPerfil.resolverColorPersona(persona)
         );
     },
 
     _proximoEventoPersona: (persona, actividades, personas) => {
-        const items = window.AgendaCalendario.proximos(actividades, personas, 45)
+        const items = AgendaCalendario.proximos(actividades, personas, 45)
             .filter(it => (it.persona_ids || []).includes(persona.id));
         return items[0] || null;
     },
 
     _crearTarjetaPersona: (grid, p, estado, ctx) => {
         const { db, dbPath, onRefresh, syncOpts, abrirActividad } = ctx;
-        const color = window.AgendaPerfil.resolverColorPersona(p);
+        const color = AgendaPerfil.resolverColorPersona(p);
 
         const card = grid.createEl("div", { cls: "agenda-card" });
         card.createEl("div", { cls: "agenda-card-banner", style: `background: ${color};` });
 
         const clickZone = card.createEl("div", { cls: "agenda-card-click" });
-        clickZone.onclick = () => window.AgendaUI._abrirPerfil(
+        clickZone.onclick = () => AgendaUI._abrirPerfil(
             app, p, estado, db, dbPath, onRefresh, { syncOpts, abrirActividad }
         );
 
         const header = clickZone.createEl("div", { cls: "agenda-card-header" });
         const avatar = header.createEl("div", { cls: "agenda-avatar" });
-        window.AgendaUI._pintarAvatar(avatar, p);
+        AgendaUI._pintarAvatar(avatar, p);
 
         const titulo = header.createEl("div", { cls: "agenda-card-titulo" });
         titulo.createEl("h4", { text: p.nombre, cls: "agenda-card-nombre" });
-        const edad = window.AgendaDB.calcularEdad(p.fecha_nacimiento);
+        const edad = AgendaDB.calcularEdad(p.fecha_nacimiento);
         const subPartes = [
             ...(p.alias || []).length ? [(p.alias || []).join(" · ")] : [],
             p.ciudad,
@@ -374,13 +384,13 @@ window.AgendaUI = {
         if (p.signo_zodiacal) badges.createEl("span", { text: `♈ ${p.signo_zodiacal}`, cls: "agenda-card-badge" });
         if (p.grupos?.length) badges.createEl("span", { text: `📂 ${p.grupos[0]}`, cls: "agenda-card-badge" });
 
-        const proximo = window.AgendaUI._proximoEventoPersona(p, estado.actividades || [], estado.personas);
+        const proximo = AgendaUI._proximoEventoPersona(p, estado.actividades || [], estado.personas);
         if (proximo) {
             const prev = clickZone.createEl("div", { cls: "agenda-card-preview" });
             prev.createEl("span", { text: proximo.icono || "📅", cls: "agenda-card-preview-icono" });
             const txt = prev.createEl("div", { cls: "agenda-card-preview-texto" });
             txt.createEl("strong", { text: proximo.titulo });
-            const meta = [window.AgendaCalendario.formatearFecha(proximo.fecha)];
+            const meta = [AgendaCalendario.formatearFecha(proximo.fecha)];
             if (proximo.diasRestantes !== undefined) {
                 meta.push(proximo.esHoy ? "¡Hoy!" : `En ${proximo.diasRestantes}d`);
             }
@@ -400,7 +410,7 @@ window.AgendaUI = {
             (p.relaciones?.[tipo] || []).forEach(rid => {
                 if (relCount >= 3) return;
                 relRow.createEl("span", {
-                    text: `${iconoRel[tipo] || "🔗"} ${window.AgendaDB.nombreDe(estado.personas, rid)}`,
+                    text: `${iconoRel[tipo] || "🔗"} ${AgendaDB.nombreDe(estado.personas, rid)}`,
                     cls: "agenda-chip-rel"
                 });
                 relCount++;
@@ -412,12 +422,12 @@ window.AgendaUI = {
         const acciones = card.createEl("div", { cls: "agenda-card-acciones" });
         acciones.onclick = (e) => e.stopPropagation();
         acciones.createEl("button", { text: "✏️", cls: "agenda-btn-icon", attr: { title: "Editar" } }).onclick = () =>
-            new window.AgendaModals.PersonaFormModal(app, db, dbPath, p, onRefresh).open();
+            new AgendaModals.PersonaFormModal(app, db, dbPath, p, onRefresh).open();
         acciones.createEl("button", { text: "📅", cls: "agenda-btn-icon", attr: { title: "Nuevo evento" } }).onclick = () =>
             abrirActividad(null, { personaIds: [p.id], tipoInicial: "evento" });
         acciones.createEl("button", { text: "🗑️", cls: "agenda-btn-icon", attr: { title: "Eliminar" } }).onclick = () => {
-            new window.AgendaModals.AgendaConfirmModal(app, `¿Eliminar a "${p.nombre}"?`, () => {
-                window.AgendaDB.eliminarPersona(db, dbPath, p.id);
+            new AgendaModals.AgendaConfirmModal(app, `¿Eliminar a "${p.nombre}"?`, () => {
+                AgendaDB.eliminarPersona(db, dbPath, p.id);
                 new (require("obsidian").Notice)("🗑️ Persona eliminada");
                 onRefresh();
             }).open();
@@ -430,7 +440,7 @@ window.AgendaUI = {
 
     // Paleta suave según tema (fondos poco saturados, bordes discretos)
     _paletaGrupos: () => {
-        const oscuro = window.AgendaUI._esTemaOscuroAgenda();
+        const oscuro = AgendaUI._esTemaOscuroAgenda();
         if (oscuro) {
             return [
                 { fill: "#252838", stroke: "#6366f166", texto: "#a5b4fc" },
@@ -465,18 +475,18 @@ window.AgendaUI = {
             const g = (p.grupos || []).filter(Boolean);
             return g.length ? g : ["Sin grupo"];
         }
-        const k = window.AgendaUI._claveAgrupacion(p, agruparPor);
+        const k = AgendaUI._claveAgrupacion(p, agruparPor);
         return [k || "Sin categoría"];
     },
 
     _claveAgrupacion: (p, agruparPor) => {
         if (agruparPor === "mbti") return p.mbti || "Sin MBTI";
         if (agruparPor === "eneagrama") {
-            return window.AgendaPerfil.etiquetaEneagrama(p.eneagrama) || "Sin eneagrama";
+            return AgendaPerfil.etiquetaEneagrama(p.eneagrama) || "Sin eneagrama";
         }
         if (agruparPor === "signo") return p.signo_zodiacal || "Sin signo";
         if (agruparPor === "tarot") {
-            return window.AgendaPerfil.etiquetaTarotFiltro(p.carta_tarot) || "Sin carta";
+            return AgendaPerfil.etiquetaTarotFiltro(p.carta_tarot) || "Sin carta";
         }
         return "";
     },
@@ -495,7 +505,7 @@ window.AgendaUI = {
         const slug = String(id || "").replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
         const base = "P" + (slug || "x");
         if (!sufijo) return base;
-        const suf = window.AgendaUI._sanitizarIdMermaid(sufijo);
+        const suf = AgendaUI._sanitizarIdMermaid(sufijo);
         return `${base}__${suf}`;
     },
 
@@ -503,21 +513,21 @@ window.AgendaUI = {
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(),
 
     _coincideNombreApodo: (persona, consulta) => {
-        const q = window.AgendaUI._normalizarBusqueda(consulta);
+        const q = AgendaUI._normalizarBusqueda(consulta);
         if (!q) return true;
-        const nombre = window.AgendaUI._normalizarBusqueda(persona.nombre);
+        const nombre = AgendaUI._normalizarBusqueda(persona.nombre);
         if (nombre.includes(q)) return true;
-        return (persona.alias || []).some(a => window.AgendaUI._normalizarBusqueda(a).includes(q));
+        return (persona.alias || []).some(a => AgendaUI._normalizarBusqueda(a).includes(q));
     },
 
     _filtrarPersonas: (personas, filtros) => {
         const q = (filtros.busqueda || "").toLowerCase().trim();
         return personas.filter(p => {
-            if (!window.AgendaUI._coincideNombreApodo(p, filtros.busquedaNombre)) return false;
-            if (filtros.tipoGusto && !window.AgendaPreferencias.coincideFiltro(
+            if (!AgendaUI._coincideNombreApodo(p, filtros.busquedaNombre)) return false;
+            if (filtros.tipoGusto && !AgendaPreferencias.coincideFiltro(
                 p.gustos, filtros.tipoGusto, filtros.elementoGusto
             )) return false;
-            if (filtros.tipoDisgusto && !window.AgendaPreferencias.coincideFiltro(
+            if (filtros.tipoDisgusto && !AgendaPreferencias.coincideFiltro(
                 p.disgustos, filtros.tipoDisgusto, filtros.elementoDisgusto
             )) return false;
             if (filtros.grupo && !(p.grupos || []).includes(filtros.grupo)) return false;
@@ -525,8 +535,8 @@ window.AgendaUI = {
             if (!q) return true;
             const texto = [
                 p.nombre, p.ciudad, p.notas, ...(p.alias || []), ...(p.grupos || []),
-                ...window.AgendaPreferencias.aplanarTexto(p.gustos),
-                ...window.AgendaPreferencias.aplanarTexto(p.disgustos)
+                ...AgendaPreferencias.aplanarTexto(p.gustos),
+                ...AgendaPreferencias.aplanarTexto(p.disgustos)
             ].join(" ").toLowerCase();
             return texto.includes(q);
         });
@@ -567,7 +577,7 @@ window.AgendaUI = {
         hostEl.innerHTML = "";
         const renderId = `agenda-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
         try {
-            const api = await window.AgendaUI._obtenerApiMermaid();
+            const api = await AgendaUI._obtenerApiMermaid();
             const { svg, bindFunctions } = await api.render(renderId, codigo);
             hostEl.innerHTML = svg;
             if (bindFunctions) bindFunctions(hostEl);
@@ -617,14 +627,14 @@ window.AgendaUI = {
 
         const mapaCustom = hostEl._agendaNodoPersonaMap;
         const mapa = mapaCustom || Object.fromEntries(
-            personas.map(p => [window.AgendaUI._nodoMermaidId(p.id), p.id])
+            personas.map(p => [AgendaUI._nodoMermaidId(p.id), p.id])
         );
         const clavesOrd = Object.keys(mapa).sort((a, b) => b.length - a.length);
 
         svg.querySelectorAll("g.node").forEach(g => {
             delete g.dataset.personaId;
             if (g.closest("g.cluster-label")) return;
-            const nodoId = window.AgendaUI._resolverClaveNodoMermaid(g.id, clavesOrd);
+            const nodoId = AgendaUI._resolverClaveNodoMermaid(g.id, clavesOrd);
             if (nodoId) g.dataset.personaId = mapa[nodoId];
         });
     },
@@ -635,7 +645,7 @@ window.AgendaUI = {
     _etiquetarAristasMermaid: (hostEl, aristasMeta) => {
         const svg = hostEl.querySelector("svg");
         if (!svg || !aristasMeta?.length) return;
-        const paths = window.AgendaUI._obtenerEdgePathsVisibles(svg);
+        const paths = AgendaUI._obtenerEdgePathsVisibles(svg);
         paths.forEach(g => {
             delete g.dataset.origenId;
             delete g.dataset.destinoId;
@@ -654,12 +664,12 @@ window.AgendaUI = {
         const rel = new Set([personaId]);
         const yo = personas.find(p => p.id === personaId);
         if (!yo) return rel;
-        window.AgendaDB.TIPOS_RELACION.forEach(t => {
+        AgendaDB.TIPOS_RELACION.forEach(t => {
             (yo.relaciones?.[t] || []).forEach(id => rel.add(id));
         });
         personas.forEach(p => {
             if (p.id === personaId) return;
-            window.AgendaDB.TIPOS_RELACION.forEach(t => {
+            AgendaDB.TIPOS_RELACION.forEach(t => {
                 if ((p.relaciones?.[t] || []).includes(personaId)) rel.add(p.id);
             });
         });
@@ -685,7 +695,7 @@ window.AgendaUI = {
             return;
         }
 
-        const relacionados = window.AgendaUI._obtenerRelacionadosMermaid(focoId, personas);
+        const relacionados = AgendaUI._obtenerRelacionadosMermaid(focoId, personas);
         hostEl._focoPersonaId = focoId;
 
         svg.querySelectorAll("g.node[data-persona-id]").forEach(n => {
@@ -707,23 +717,23 @@ window.AgendaUI = {
 
     _toggleFocoMermaid: (hostEl, personaId) => {
         if (hostEl._focoPersonaId === personaId) {
-            window.AgendaUI._aplicarFocoMermaid(hostEl, null);
+            AgendaUI._aplicarFocoMermaid(hostEl, null);
         } else {
-            window.AgendaUI._aplicarFocoMermaid(hostEl, personaId);
+            AgendaUI._aplicarFocoMermaid(hostEl, personaId);
         }
     },
 
     _enlazarClicksMermaid: (hostEl, db, dbPath, onRefresh) => {
-        const personas = hostEl._agendaPersonas || window.AgendaDB.obtenerTodas(db);
-        window.AgendaUI._etiquetarNodosMermaid(hostEl, personas);
+        const personas = hostEl._agendaPersonas || AgendaDB.obtenerTodas(db);
+        AgendaUI._etiquetarNodosMermaid(hostEl, personas);
         const svg = hostEl.querySelector("svg");
         if (!svg) return;
 
         const abrir = (personaId) => {
             const p = (hostEl._agendaPersonas || personas).find(x => x.id === personaId);
             if (p) {
-                const estado = window.AgendaDB.cargarEstado(db);
-                window.AgendaUI._abrirPerfil(app, p, estado, db, dbPath, onRefresh);
+                const estado = AgendaDB.cargarEstado(db);
+                AgendaUI._abrirPerfil(app, p, estado, db, dbPath, onRefresh);
             }
         };
 
@@ -737,7 +747,7 @@ window.AgendaUI = {
             if (!nodo) return;
             e.preventDefault();
             e.stopPropagation();
-            window.AgendaUI._toggleFocoMermaid(hostEl, nodo.dataset.personaId);
+            AgendaUI._toggleFocoMermaid(hostEl, nodo.dataset.personaId);
         };
         hostEl._agendaCtxMermaid = (e) => {
             const nodo = e.target.closest("g.node[data-persona-id]");
@@ -755,7 +765,7 @@ window.AgendaUI = {
     _pulirEstiloAristasMermaid: (hostEl, estilosArista) => {
         const svg = hostEl.querySelector("svg");
         if (!svg) return;
-        const paths = window.AgendaUI._obtenerEdgePathsVisibles(svg);
+        const paths = AgendaUI._obtenerEdgePathsVisibles(svg);
         paths.forEach((g, i) => {
             const path = g.querySelector("path.path");
             if (!path || !estilosArista[i]) return;
@@ -774,7 +784,7 @@ window.AgendaUI = {
                 });
             }
         });
-        window.AgendaUI._etiquetarAristasMermaid(hostEl, estilosArista);
+        AgendaUI._etiquetarAristasMermaid(hostEl, estilosArista);
         svg.querySelectorAll(".edgeLabel").forEach(el => { el.remove(); });
     },
 
@@ -782,7 +792,7 @@ window.AgendaUI = {
         const svg = hostEl.querySelector("svg");
         if (!svg || !gruposMeta.length) return;
 
-        const paleta = window.AgendaUI._paletaGrupos();
+        const paleta = AgendaUI._paletaGrupos();
         svg.style.overflow = "visible";
         const clusters = [...svg.querySelectorAll("g.cluster")];
         clusters.forEach((cluster, i) => {
@@ -819,16 +829,16 @@ window.AgendaUI = {
 
         const mapa = new Map();
         personas.forEach(p => {
-            window.AgendaUI._clavesAgrupacion(p, agruparPor).forEach(k => {
+            AgendaUI._clavesAgrupacion(p, agruparPor).forEach(k => {
                 if (!mapa.has(k)) mapa.set(k, []);
                 if (!mapa.get(k).includes(p.nombre)) mapa.get(k).push(p.nombre);
             });
         });
 
-        const paleta = window.AgendaUI._paletaGrupos();
+        const paleta = AgendaUI._paletaGrupos();
         host.style.display = "";
         host.createEl("strong", {
-            text: `📂 Agrupado por ${window.AgendaUI._etiquetaAgruparPor(agruparPor)} · ${mapa.size} grupo${mapa.size !== 1 ? "s" : ""}`
+            text: `📂 Agrupado por ${AgendaUI._etiquetaAgruparPor(agruparPor)} · ${mapa.size} grupo${mapa.size !== 1 ? "s" : ""}`
         });
         const grupos = host.createEl("div", { cls: "agenda-agrupacion-grupos" });
         [...mapa.entries()]
@@ -850,7 +860,7 @@ window.AgendaUI = {
         const ids = new Set(personas.map(p => p.id));
         const agruparPor = opts.agruparPor || "";
         const tipoRel = opts.tipoRel || "";
-        const paleta = window.AgendaUI._paletaGrupos();
+        const paleta = AgendaUI._paletaGrupos();
         const multiGrupo = agruparPor === "grupos";
         let codigo = agruparPor ? "graph TB\n" : "graph LR\n";
         const gruposMeta = [];
@@ -859,17 +869,17 @@ window.AgendaUI = {
 
         const registrarNodo = (p, grupoTitulo, indent) => {
             const nid = multiGrupo
-                ? window.AgendaUI._nodoMermaidId(p.id, grupoTitulo)
-                : window.AgendaUI._nodoMermaidId(p.id);
+                ? AgendaUI._nodoMermaidId(p.id, grupoTitulo)
+                : AgendaUI._nodoMermaidId(p.id);
             nodoPersonaMap[nid] = p.id;
             if (multiGrupo) {
                 if (!nodoPorPersonaGrupo.has(p.id)) nodoPorPersonaGrupo.set(p.id, new Map());
                 nodoPorPersonaGrupo.get(p.id).set(grupoTitulo, nid);
             }
-            const label = window.AgendaUI._sanitizarMermaid(p.nombre);
-            const base = window.AgendaPerfil.resolverColorPersona(p);
-            const stroke = window.AgendaPerfil.ajustarColor(base, 0.72);
-            const texto = window.AgendaPerfil.colorTextoContraste(base);
+            const label = AgendaUI._sanitizarMermaid(p.nombre);
+            const base = AgendaPerfil.resolverColorPersona(p);
+            const stroke = AgendaPerfil.ajustarColor(base, 0.72);
+            const texto = AgendaPerfil.colorTextoContraste(base);
             codigo += `${indent}${nid}(["${label}"])\n`;
             codigo += `${indent}style ${nid} fill:${base},stroke:${stroke},color:${texto},stroke-width:2px\n`;
             return nid;
@@ -878,7 +888,7 @@ window.AgendaUI = {
         if (agruparPor) {
             const mapa = new Map();
             personas.forEach(p => {
-                window.AgendaUI._clavesAgrupacion(p, agruparPor).forEach(k => {
+                AgendaUI._clavesAgrupacion(p, agruparPor).forEach(k => {
                     if (!mapa.has(k)) mapa.set(k, []);
                     mapa.get(k).push(p);
                 });
@@ -887,7 +897,7 @@ window.AgendaUI = {
             [...mapa.entries()].sort((a, b) => a[0].localeCompare(b[0], "es")).forEach(([titulo, lista]) => {
                 const col = paleta[gi % paleta.length];
                 const sg = `SG${gi}`;
-                const tit = window.AgendaUI._sanitizarMermaid(titulo);
+                const tit = AgendaUI._sanitizarMermaid(titulo);
                 codigo += `  subgraph ${sg}["${tit}"]\n    direction LR\n`;
                 lista.forEach(p => registrarNodo(p, titulo, "    "));
                 codigo += "  end\n";
@@ -903,7 +913,7 @@ window.AgendaUI = {
 
         const resolverOrigen = (p) => {
             if (multiGrupo) return nodoPorPersonaGrupo.get(p.id);
-            return new Map([["", window.AgendaUI._nodoMermaidId(p.id)]]);
+            return new Map([["", AgendaUI._nodoMermaidId(p.id)]]);
         };
 
         const vistos = new Set();
@@ -974,39 +984,39 @@ window.AgendaUI = {
 
     _renderMapaRelaciones: async (container, db, dbPath, onRefresh, opciones = {}) => {
         const obtenerBase = () => {
-            const todas = window.AgendaDB.obtenerTodas(db);
+            const todas = AgendaDB.obtenerTodas(db);
             if (typeof opciones.obtenerFiltrosDashboard === "function") {
-                return window.AgendaUI._filtrarPersonas(todas, opciones.obtenerFiltrosDashboard());
+                return AgendaUI._filtrarPersonas(todas, opciones.obtenerFiltrosDashboard());
             }
             return todas;
         };
         const todas = obtenerBase();
-        const optsDiagrama = window.AgendaUI._opcionesFiltroDiagrama(todas);
+        const optsDiagrama = AgendaUI._opcionesFiltroDiagrama(todas);
         const wrapper = container.createEl("div", { cls: "agenda-seccion-mapa" });
         wrapper.createEl("h3", { text: "🕸️ Red de Relaciones Social" });
 
         const filtrosWrap = wrapper.createEl("div", { cls: "agenda-filtros-diagrama" });
-        const selMbti = window.AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "MBTI", "");
-        window.AgendaUI._llenarSelectFiltro(selMbti, "Todos", optsDiagrama.mbti);
-        const selEnea = window.AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Eneagrama", "");
-        window.AgendaUI._llenarSelectFiltro(selEnea, "Todos", optsDiagrama.eneagrama,
-            v => window.AgendaPerfil.etiquetaEneagrama(v));
-        const selSigno = window.AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Signo", "");
-        window.AgendaUI._llenarSelectFiltro(selSigno, "Todos", optsDiagrama.signos);
-        const selTarot = window.AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Tarot", "");
-        window.AgendaUI._llenarSelectFiltro(selTarot, "Todos", optsDiagrama.tarots,
-            v => window.AgendaPerfil.etiquetaTarotFiltro(v));
-        const selGrupo = window.AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Grupo", "");
-        window.AgendaUI._llenarSelectFiltro(selGrupo, "Todos", optsDiagrama.grupos);
-        const selTipoRel = window.AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Tipo vínculo", "");
-        window.AgendaUI._llenarSelectFiltro(selTipoRel, "Todos", window.AgendaDB.TIPOS_RELACION, t => {
+        const selMbti = AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "MBTI", "");
+        AgendaUI._llenarSelectFiltro(selMbti, "Todos", optsDiagrama.mbti);
+        const selEnea = AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Eneagrama", "");
+        AgendaUI._llenarSelectFiltro(selEnea, "Todos", optsDiagrama.eneagrama,
+            v => AgendaPerfil.etiquetaEneagrama(v));
+        const selSigno = AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Signo", "");
+        AgendaUI._llenarSelectFiltro(selSigno, "Todos", optsDiagrama.signos);
+        const selTarot = AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Tarot", "");
+        AgendaUI._llenarSelectFiltro(selTarot, "Todos", optsDiagrama.tarots,
+            v => AgendaPerfil.etiquetaTarotFiltro(v));
+        const selGrupo = AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Grupo", "");
+        AgendaUI._llenarSelectFiltro(selGrupo, "Todos", optsDiagrama.grupos);
+        const selTipoRel = AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Tipo vínculo", "");
+        AgendaUI._llenarSelectFiltro(selTipoRel, "Todos", AgendaDB.TIPOS_RELACION, t => {
             const n = {
                 pareja: "Pareja", mejores_amigos: "Mejores amigos", amigos: "Amigos",
                 familia: "Familia", conocidos: "Conocidos", trabajo: "Trabajo", escuela: "Escuela"
             };
             return n[t] || t;
         });
-        const selAgrupar = window.AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Agrupar por", "");
+        const selAgrupar = AgendaUI._crearSelectFiltroDiagrama(filtrosWrap, "Agrupar por", "");
         [
             { v: "", t: "Sin agrupar" },
             { v: "mbti", t: "MBTI" },
@@ -1047,7 +1057,7 @@ window.AgendaUI = {
             svgHost.innerHTML = "";
             svgHost._focoPersonaId = null;
             svgHost._agendaNodoPersonaMap = null;
-            window.AgendaUI._renderLeyendaAgrupacion(agrupacionHost, "", []);
+            AgendaUI._renderLeyendaAgrupacion(agrupacionHost, "", []);
 
             const base = obtenerBase();
             const filtros = {
@@ -1058,7 +1068,7 @@ window.AgendaUI = {
                 grupo: selGrupo.value,
                 tipoRel: selTipoRel.value
             };
-            const personas = window.AgendaUI._filtrarPersonasDiagrama(base, filtros);
+            const personas = AgendaUI._filtrarPersonasDiagrama(base, filtros);
             const agruparPor = selAgrupar.value;
 
             if (!base.length) {
@@ -1079,7 +1089,7 @@ window.AgendaUI = {
             }
 
             const tieneVinculos = personas.some(p =>
-                window.AgendaDB.TIPOS_RELACION.some(t => {
+                AgendaDB.TIPOS_RELACION.some(t => {
                     if (filtros.tipoRel && t !== filtros.tipoRel) return false;
                     return (p.relaciones?.[t] || []).some(rid => personas.some(x => x.id === rid));
                 })
@@ -1091,18 +1101,18 @@ window.AgendaUI = {
                 });
             }
 
-            const { codigo, estilosArista, gruposMeta, nodoPersonaMap } = window.AgendaUI._construirMermaidRelaciones(personas, {
+            const { codigo, estilosArista, gruposMeta, nodoPersonaMap } = AgendaUI._construirMermaidRelaciones(personas, {
                 agruparPor, tipoRel: filtros.tipoRel
             });
-            window.AgendaUI._renderLeyendaAgrupacion(agrupacionHost, agruparPor, personas);
+            AgendaUI._renderLeyendaAgrupacion(agrupacionHost, agruparPor, personas);
             svgHost._agendaAristasMeta = estilosArista;
             svgHost._agendaPersonas = personas;
             svgHost._agendaNodoPersonaMap = nodoPersonaMap;
-            await window.AgendaUI._renderMermaidSvg(svgHost, codigo);
-            window.AgendaUI._pulirEstiloNodosMermaid(svgHost);
-            window.AgendaUI._pulirEstiloSubgrafosMermaid(svgHost, gruposMeta);
-            window.AgendaUI._pulirEstiloAristasMermaid(svgHost, estilosArista);
-            window.AgendaUI._enlazarClicksMermaid(svgHost, db, dbPath, onRefresh);
+            await AgendaUI._renderMermaidSvg(svgHost, codigo);
+            AgendaUI._pulirEstiloNodosMermaid(svgHost);
+            AgendaUI._pulirEstiloSubgrafosMermaid(svgHost, gruposMeta);
+            AgendaUI._pulirEstiloAristasMermaid(svgHost, estilosArista);
+            AgendaUI._enlazarClicksMermaid(svgHost, db, dbPath, onRefresh);
         };
 
         [selMbti, selEnea, selSigno, selTarot, selGrupo, selTipoRel, selAgrupar].forEach(el => {
@@ -1116,15 +1126,15 @@ window.AgendaUI = {
         const syncOpts = { SQL: ctx.SQL, kanbanPath: ctx.kanbanPath, dbPath };
         mainContainer.empty();
         mainContainer.addClass("agenda-shell");
-        window.AgendaCalendario.injectStyles();
-        window.AgendaUI.injectStyles();
-        const estado = window.AgendaDB.cargarEstado(db, syncOpts);
-        const sugerencias = window.AgendaDB.obtenerSugerencias(estado);
+        AgendaCalendario.injectStyles();
+        AgendaUI.injectStyles();
+        const estado = AgendaDB.cargarEstado(db, syncOpts);
+        const sugerencias = AgendaDB.obtenerSugerencias(estado);
         let vistaActual = "personas";
         let filtrosAbiertos = false;
 
         const abrirActividad = (datos, extra = {}) => {
-            new window.AgendaModals.ActividadFormModal(app, db, dbPath, {
+            new AgendaModals.ActividadFormModal(app, db, dbPath, {
                 datosEdicion: datos,
                 personaIds: extra.personaIds,
                 tipoInicial: extra.tipoInicial,
@@ -1140,7 +1150,7 @@ window.AgendaUI = {
         izqTools.createEl("button", {
             text: "➕ Nueva Persona",
             cls: "agenda-btn-primario"
-        }).onclick = () => new window.AgendaModals.PersonaFormModal(app, db, dbPath, null, onRefresh).open();
+        }).onclick = () => new AgendaModals.PersonaFormModal(app, db, dbPath, null, onRefresh).open();
         izqTools.createEl("button", { text: "📅 Evento" }).onclick = () => abrirActividad(null, { tipoInicial: "evento" });
         izqTools.createEl("button", { text: "📝 Tarea" }).onclick = () => abrirActividad(null, { tipoInicial: "tarea" });
         const selMiPersona = izqTools.createEl("select", { attr: { title: "¿Quién eres?" } });
@@ -1150,7 +1160,7 @@ window.AgendaUI = {
             if (p.id === estado.miPersonaId) opt.selected = true;
         });
         selMiPersona.onchange = () => {
-            window.AgendaDB.establecerMiPersona(db, dbPath, selMiPersona.value);
+            AgendaDB.establecerMiPersona(db, dbPath, selMiPersona.value);
             new Notice(selMiPersona.value ? "✅ Persona vinculada como tú" : "Sin persona vinculada");
             onRefresh();
         };
@@ -1192,7 +1202,7 @@ window.AgendaUI = {
         selTipoGusto.createEl("option", { text: "Gusto: todas", value: "" });
         sugerencias.tipos_preferencia.forEach(t => selTipoGusto.createEl("option", { text: `Gusto: ${t}`, value: t }));
         const selElemGusto = filtrosAvanzados.createEl("select");
-        window.AgendaUI._llenarElementosPref(
+        AgendaUI._llenarElementosPref(
             selElemGusto, "", sugerencias.elementos_por_tipo, sugerencias.todos_elementos_gusto
         );
         const selTipoDisgusto = filtrosAvanzados.createEl("select");
@@ -1200,7 +1210,7 @@ window.AgendaUI = {
         sugerencias.tipos_preferencia.forEach(t =>
             selTipoDisgusto.createEl("option", { text: `Disgusto: ${t}`, value: t }));
         const selElemDisgusto = filtrosAvanzados.createEl("select");
-        window.AgendaUI._llenarElementosPref(
+        AgendaUI._llenarElementosPref(
             selElemDisgusto, "", sugerencias.elementos_por_tipo, sugerencias.todos_elementos_disgusto
         );
         const selCiudad = filtrosAvanzados.createEl("select");
@@ -1233,7 +1243,7 @@ window.AgendaUI = {
         });
 
         const render = async () => {
-            const estadoActual = window.AgendaDB.cargarEstado(db, syncOpts);
+            const estadoActual = AgendaDB.cargarEstado(db, syncOpts);
             Object.values(tabBtns).forEach(b => b.classList.remove("agenda-vista-tab--activa"));
             tabBtns[vistaActual]?.classList.add("agenda-vista-tab--activa");
             actualizarBarraPersonas();
@@ -1245,13 +1255,13 @@ window.AgendaUI = {
             if (vistaActual === "calendario") {
                 const sec = contenido.createEl("div", { cls: "agenda-seccion-mapa" });
                 sec.createEl("h3", { text: "📅 Calendario" });
-                window.AgendaCalendario.renderCalendario(sec, estadoActual.actividades, estadoActual.personas, {
+                AgendaCalendario.renderCalendario(sec, estadoActual.actividades, estadoActual.personas, {
                     onDiaClick: (fecha) => abrirActividad(null, { fecha }),
                     onEdit: (act) => abrirActividad(act)
                 });
                 const secProx = contenido.createEl("div", { cls: "agenda-seccion-mapa" });
                 secProx.createEl("h3", { text: "🔔 Próximos eventos y fechas importantes" });
-                window.AgendaCalendario.renderProximos(secProx, estadoActual.actividades, estadoActual.personas, {
+                AgendaCalendario.renderProximos(secProx, estadoActual.actividades, estadoActual.personas, {
                     onEdit: (act) => act.tipo !== "fecha_importante" && abrirActividad(act)
                 });
                 return;
@@ -1260,7 +1270,7 @@ window.AgendaUI = {
             if (vistaActual === "timeline") {
                 const sec = contenido.createEl("div", { cls: "agenda-seccion-mapa" });
                 sec.createEl("h3", { text: "📜 Línea de tiempo de actividades" });
-                window.AgendaCalendario.renderTimeline(sec, estadoActual.actividades, estadoActual.personas, {
+                AgendaCalendario.renderTimeline(sec, estadoActual.actividades, estadoActual.personas, {
                     onEdit: (act) => abrirActividad(act)
                 });
                 return;
@@ -1269,7 +1279,7 @@ window.AgendaUI = {
             if (vistaActual === "proximos") {
                 const sec = contenido.createEl("div", { cls: "agenda-seccion-mapa" });
                 sec.createEl("h3", { text: "🔔 Próximos eventos y cumpleaños" });
-                window.AgendaCalendario.renderProximos(sec, estadoActual.actividades, estadoActual.personas, {
+                AgendaCalendario.renderProximos(sec, estadoActual.actividades, estadoActual.personas, {
                     max: 12,
                     onEdit: (act) => act.tipo !== "fecha_importante" && abrirActividad(act)
                 });
@@ -1277,13 +1287,13 @@ window.AgendaUI = {
             }
 
             if (vistaActual === "red") {
-                await window.AgendaUI._renderMapaRelaciones(contenido, db, dbPath, onRefresh, {
+                await AgendaUI._renderMapaRelaciones(contenido, db, dbPath, onRefresh, {
                     obtenerFiltrosDashboard: obtenerFiltros
                 });
                 return;
             }
 
-            const filtradas = window.AgendaUI._filtrarPersonas(estadoActual.personas, filtros);
+            const filtradas = AgendaUI._filtrarPersonas(estadoActual.personas, filtros);
             const stats = contenido.createEl("div", { cls: "agenda-stats" });
             stats.createEl("span", {
                 text: `👥 ${filtradas.length} / ${estadoActual.personas.length}`,
@@ -1302,7 +1312,7 @@ window.AgendaUI = {
                 });
                 return;
             }
-            filtradas.forEach(p => window.AgendaUI._crearTarjetaPersona(grid, p, estadoActual, {
+            filtradas.forEach(p => AgendaUI._crearTarjetaPersona(grid, p, estadoActual, {
                 db, dbPath, onRefresh, syncOpts, abrirActividad
             }));
         };
@@ -1314,13 +1324,13 @@ window.AgendaUI = {
         selCiudad.onchange = render;
         selGrupo.onchange = render;
         selTipoGusto.onchange = () => {
-            window.AgendaUI._llenarElementosPref(
+            AgendaUI._llenarElementosPref(
                 selElemGusto, selTipoGusto.value, sugerencias.elementos_por_tipo, sugerencias.todos_elementos_gusto
             );
             render();
         };
         selTipoDisgusto.onchange = () => {
-            window.AgendaUI._llenarElementosPref(
+            AgendaUI._llenarElementosPref(
                 selElemDisgusto, selTipoDisgusto.value, sugerencias.elementos_por_tipo, sugerencias.todos_elementos_disgusto
             );
             render();
@@ -1331,14 +1341,14 @@ window.AgendaUI = {
     _abrirPerfil: (app, persona, estado, db, dbPath, onRefresh, ctx = {}) => {
         const syncOpts = ctx.syncOpts || {};
         const abrirAct = ctx.abrirActividad || ((datos, extra = {}) => {
-            new window.AgendaModals.ActividadFormModal(app, db, dbPath, {
+            new AgendaModals.ActividadFormModal(app, db, dbPath, {
                 datosEdicion: datos, personaIds: extra.personaIds || [persona.id],
                 tipoInicial: extra.tipoInicial, fecha: extra.fecha, syncOpts
             }, onRefresh || (() => {})).open();
         });
-        const actividades = estado.actividades || window.AgendaDB.obtenerActividades(db);
-        const color = window.AgendaPerfil.resolverColorPersona(persona);
-        const colorOscuro = window.AgendaPerfil.ajustarColor(color, 0.62);
+        const actividades = estado.actividades || AgendaDB.obtenerActividades(db);
+        const color = AgendaPerfil.resolverColorPersona(persona);
+        const colorOscuro = AgendaPerfil.ajustarColor(color, 0.62);
 
         const dato = (parent, label, valor) => {
             if (valor === undefined || valor === null || valor === "") return;
@@ -1347,10 +1357,10 @@ window.AgendaUI = {
             box.createEl("span", { text: String(valor) });
         };
 
-        class PerfilModal extends window.Modal {
+        class PerfilModal extends Modal {
             onOpen() {
-                window.AgendaModals.injectFormStyles();
-                window.AgendaCalendario.injectStyles();
+                AgendaModals.injectFormStyles();
+                AgendaCalendario.injectStyles();
                 const { contentEl } = this;
                 const layout = contentEl.createEl("div", { cls: "agenda-perfil-layout" });
 
@@ -1360,11 +1370,11 @@ window.AgendaUI = {
                 });
                 const heroInner = hero.createEl("div", { cls: "agenda-perfil-hero-inner" });
                 const avatarDet = heroInner.createEl("div", { cls: "agenda-avatar agenda-avatar--grande" });
-                window.AgendaUI._pintarAvatar(avatarDet, persona);
+                AgendaUI._pintarAvatar(avatarDet, persona);
 
                 const info = heroInner.createEl("div", { cls: "agenda-perfil-hero-info" });
                 info.createEl("h2", { text: persona.nombre });
-                const edad = window.AgendaDB.calcularEdad(persona.fecha_nacimiento);
+                const edad = AgendaDB.calcularEdad(persona.fecha_nacimiento);
                 const meta = [persona.ciudad, edad !== null ? `${edad} años` : null, ...(persona.alias || [])].filter(Boolean).join(" · ");
                 if (meta) info.createEl("div", { text: meta, cls: "agenda-perfil-hero-meta" });
 
@@ -1373,7 +1383,7 @@ window.AgendaUI = {
                 if (persona.eneagrama) chips.createEl("span", { text: `E-${persona.eneagrama}`, cls: "agenda-perfil-hero-chip" });
                 if (persona.signo_zodiacal) chips.createEl("span", { text: persona.signo_zodiacal, cls: "agenda-perfil-hero-chip" });
                 if (persona.carta_natal?.ascendente) {
-                    const ascSigno = window.AgendaAstral._lonASigno(persona.carta_natal.ascendente.lon);
+                    const ascSigno = AgendaAstral._lonASigno(persona.carta_natal.ascendente.lon);
                     chips.createEl("span", { text: `ASC ${ascSigno.s} ${ascSigno.n}`, cls: "agenda-perfil-hero-chip" });
                 }
                 if (persona.dias_para_cumple) chips.createEl("span", { text: `🎂 ${persona.dias_para_cumple}`, cls: "agenda-perfil-hero-chip" });
@@ -1381,7 +1391,7 @@ window.AgendaUI = {
                 const accHero = heroInner.createEl("div", { cls: "agenda-perfil-acciones-hero" });
                 accHero.createEl("button", { text: "✏️ Editar" }).onclick = () => {
                     this.close();
-                    new window.AgendaModals.PersonaFormModal(app, db, dbPath, persona, onRefresh).open();
+                    new AgendaModals.PersonaFormModal(app, db, dbPath, persona, onRefresh).open();
                 };
                 accHero.createEl("button", { text: "📅 Evento" }).onclick = () => abrirAct(null, { personaIds: [persona.id], tipoInicial: "evento" });
                 accHero.createEl("button", { text: "📝 Tarea" }).onclick = () => abrirAct(null, { personaIds: [persona.id], tipoInicial: "tarea" });
@@ -1402,19 +1412,19 @@ window.AgendaUI = {
                     if (tabActiva === "resumen") {
                         const s1 = scroll.createEl("div", { cls: "agenda-perfil-seccion" });
                         s1.createEl("h4", { text: "🔔 Próximos eventos" });
-                        window.AgendaCalendario.renderProximos(s1, actividades, estado.personas, {
+                        AgendaCalendario.renderProximos(s1, actividades, estado.personas, {
                             personaId: persona.id, max: 6,
                             onEdit: (act) => act.tipo !== "fecha_importante" && abrirAct(act)
                         });
                         const s2 = scroll.createEl("div", { cls: "agenda-perfil-seccion" });
                         s2.createEl("h4", { text: "📜 Línea de tiempo reciente" });
-                        window.AgendaCalendario.renderTimeline(s2, actividades, estado.personas, {
+                        AgendaCalendario.renderTimeline(s2, actividades, estado.personas, {
                             personaId: persona.id, onEdit: (act) => abrirAct(act)
                         });
                         if (persona.carta_natal) {
                             const s3 = scroll.createEl("div", { cls: "agenda-perfil-seccion" });
                             s3.createEl("h4", { text: "🌌 Carta natal" });
-                            window.AgendaAstral.renderCarta(s3, persona, {
+                            AgendaAstral.renderCarta(s3, persona, {
                                 compacto: true,
                                 enlaceCompleto: true,
                                 onIrATab: () => {
@@ -1426,10 +1436,10 @@ window.AgendaUI = {
                             });
                         }
                     } else if (tabActiva === "carta") {
-                        window.AgendaAstral.renderCarta(scroll, persona);
+                        AgendaAstral.renderCarta(scroll, persona);
                     } else if (tabActiva === "calendario") {
                         const s = scroll.createEl("div", { cls: "agenda-perfil-seccion" });
-                        window.AgendaCalendario.renderCalendario(s, actividades, estado.personas, {
+                        AgendaCalendario.renderCalendario(s, actividades, estado.personas, {
                             personaId: persona.id,
                             onDiaClick: (fecha) => abrirAct(null, { personaIds: [persona.id], fecha }),
                             onEdit: (act) => abrirAct(act)
@@ -1443,10 +1453,10 @@ window.AgendaUI = {
                         dato(grid, "Hora de nacimiento", persona.hora_nacimiento_desconocida
                             ? "Desconocida"
                             : (persona.hora_nacimiento || "—"));
-                        const lugarNac = window.AgendaPerfil.formatearLugarNacimiento(persona);
+                        const lugarNac = AgendaPerfil.formatearLugarNacimiento(persona);
                         dato(grid, "Lugar de nacimiento", lugarNac || "—");
                         if (persona.estado_nacimiento) dato(grid, "Estado / provincia", persona.estado_nacimiento);
-                        const coords = window.AgendaPerfil.formatearCoordenadas(persona.latitud, persona.longitud);
+                        const coords = AgendaPerfil.formatearCoordenadas(persona.latitud, persona.longitud);
                         dato(grid, "Coordenadas", coords || "—");
                         dato(grid, "Zona horaria", persona.zona_horaria);
                         if (persona.carta_astral?.listo) {
@@ -1458,20 +1468,20 @@ window.AgendaUI = {
                         }
                         dato(grid, "Próximo cumpleaños", persona.dias_para_cumple);
                         dato(grid, "MBTI", persona.mbti);
-                        dato(grid, "Eneagrama", window.AgendaPerfil.etiquetaEneagrama(persona.eneagrama));
-                        const iqDet = window.AgendaPerfil.formatearIq(persona.iq_min, persona.iq_max);
+                        dato(grid, "Eneagrama", AgendaPerfil.etiquetaEneagrama(persona.eneagrama));
+                        const iqDet = AgendaPerfil.formatearIq(persona.iq_min, persona.iq_max);
                         if (iqDet) {
-                            const etqIq = window.AgendaPerfil.etiquetaRangoIq(persona.iq_min, persona.iq_max, window.AgendaDB.obtenerRangosIq(db));
+                            const etqIq = AgendaPerfil.etiquetaRangoIq(persona.iq_min, persona.iq_max, AgendaDB.obtenerRangosIq(db));
                             dato(grid, "IQ aproximado", etqIq ? `${iqDet} (${etqIq})` : iqDet);
                         }
                         dato(grid, "Puntos destacables", (persona.puntos_destacables || []).join(", "));
-                        dato(grid, "Inteligencias", window.AgendaPerfil.serializarInteligencias(persona.inteligencias));
+                        dato(grid, "Inteligencias", AgendaPerfil.serializarInteligencias(persona.inteligencias));
                         dato(grid, "Teléfono", persona.contacto?.telefono);
                         dato(grid, "Email", persona.contacto?.email);
                         dato(grid, "Ciudad", persona.ciudad);
-                        dato(grid, "Actividad social", window.AgendaDB.formatearActividadSocial(persona.actividad_social));
-                        dato(grid, "Gustos", window.AgendaPreferencias.serializarTexto(persona.gustos));
-                        dato(grid, "Disgustos", window.AgendaPreferencias.serializarTexto(persona.disgustos));
+                        dato(grid, "Actividad social", AgendaDB.formatearActividadSocial(persona.actividad_social));
+                        dato(grid, "Gustos", AgendaPreferencias.serializarTexto(persona.gustos));
+                        dato(grid, "Disgustos", AgendaPreferencias.serializarTexto(persona.disgustos));
                         dato(grid, "Moralidad", persona.moralidad);
                         dato(grid, "Ética", persona.etica);
                         dato(grid, "Potencial de mejora", persona.potencial);
@@ -1481,8 +1491,8 @@ window.AgendaUI = {
                         const sRel = scroll.createEl("div", { cls: "agenda-perfil-seccion" });
                         sRel.createEl("h4", { text: "🔗 Relaciones" });
                         const gridRel = sRel.createEl("div", { cls: "agenda-perfil-datos" });
-                        window.AgendaDB.TIPOS_RELACION.forEach(tipo => {
-                            const nombres = (persona.relaciones?.[tipo] || []).map(id => window.AgendaDB.nombreDe(estado.personas, id)).join(", ");
+                        AgendaDB.TIPOS_RELACION.forEach(tipo => {
+                            const nombres = (persona.relaciones?.[tipo] || []).map(id => AgendaDB.nombreDe(estado.personas, id)).join(", ");
                             dato(gridRel, tipo.replace("_", " "), nombres);
                         });
 
@@ -1514,5 +1524,5 @@ window.AgendaUI = {
     },
 
     _abrirDetalle: (app, persona, estado, db, dbPath, onRefresh, ctx) =>
-        window.AgendaUI._abrirPerfil(app, persona, estado, db, dbPath, onRefresh, ctx)
+        AgendaUI._abrirPerfil(app, persona, estado, db, dbPath, onRefresh, ctx)
 };

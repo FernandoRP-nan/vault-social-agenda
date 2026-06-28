@@ -1,6 +1,10 @@
+/* agenda_calendario.ts — migrado a módulo TS */
+// @ts-nocheck
+import { AgendaDB } from "./agenda_db";
+
 /* agenda_calendario.js - Eventos, tareas, timeline y calendario por persona */
 
-window.AgendaCalendario = {
+export const AgendaCalendario = {
     ICONOS: ["📅", "🎂", "📞", "☕", "🎁", "✈️", "💼", "🎓", "❤️", "⭐", "🔔", "📝", "🎯", "🏠", "🎉"],
     ESTADOS: ["pendiente", "en_proceso", "terminado", "descartado"],
     PROYECTO_PERSONAL: "Personal",
@@ -14,7 +18,7 @@ window.AgendaCalendario = {
         icono: (a?.icono || "📅").trim() || "📅",
         fecha: (a?.fecha || "").slice(0, 10),
         fecha_fin: (a?.fecha_fin || "").slice(0, 10),
-        estado: window.AgendaCalendario.ESTADOS.includes(a?.estado) ? a.estado : "pendiente",
+        estado: AgendaCalendario.ESTADOS.includes(a?.estado) ? a.estado : "pendiente",
         notas: (a?.notas || "").trim(),
         persona_ids: [...new Set((a?.persona_ids || []).filter(Boolean))],
         grupos: [...new Set((a?.grupos || []).map(g => String(g).trim()).filter(Boolean))],
@@ -39,17 +43,17 @@ window.AgendaCalendario = {
     }[estado] || "pendiente"),
 
     resolverProyecto: (actividad, personas) => {
-        const a = window.AgendaCalendario.normalizar(actividad);
+        const a = AgendaCalendario.normalizar(actividad);
         if (a.grupos.length) return a.grupos[0];
         for (const pid of a.persona_ids) {
             const p = personas.find(x => x.id === pid);
             if (p?.grupos?.length) return p.grupos[0];
         }
-        return window.AgendaCalendario.PROYECTO_PERSONAL;
+        return AgendaCalendario.PROYECTO_PERSONAL;
     },
 
     aplicarEstado: (act, estado, ahora = null) => {
-        const ts = ahora || window.AgendaCalendario._ahora();
+        const ts = ahora || AgendaCalendario._ahora();
         const out = { ...act, estado };
         if (estado === "en_proceso" && !out.iniciado_en) out.iniciado_en = ts;
         if (estado === "terminado" && !out.terminado_en) out.terminado_en = ts;
@@ -116,7 +120,7 @@ window.AgendaCalendario = {
         hoy.setHours(0, 0, 0, 0);
         const limite = new Date(hoy);
         limite.setDate(limite.getDate() + dias);
-        const importantes = window.AgendaCalendario.fechasImportantes(personas, dias);
+        const importantes = AgendaCalendario.fechasImportantes(personas, dias);
         const acts = actividades
             .filter(a => a.estado !== "descartado" && a.estado !== "terminado")
             .map(a => ({ ...a, _sort: a.fecha }))
@@ -137,7 +141,7 @@ window.AgendaCalendario = {
     },
 
     _nombrePersonas: (ids, personas) =>
-        (ids || []).map(id => window.AgendaDB.nombreDe(personas, id)).filter(Boolean).join(", "),
+        (ids || []).map(id => AgendaDB.nombreDe(personas, id)).filter(Boolean).join(", "),
 
     renderTarjetaProximo: (parent, item, personas, onClick) => {
         const card = parent.createEl("div", { cls: "agenda-cal-prox-card" });
@@ -145,14 +149,14 @@ window.AgendaCalendario = {
         const cuerpo = card.createEl("div", { cls: "agenda-cal-prox-cuerpo" });
         cuerpo.createEl("strong", { text: item.titulo });
         const meta = [];
-        meta.push(window.AgendaCalendario.formatearFecha(item.fecha));
+        meta.push(AgendaCalendario.formatearFecha(item.fecha));
         if (item.diasRestantes !== undefined) {
             meta.push(item.esHoy ? "¡Hoy!" : `En ${item.diasRestantes} día${item.diasRestantes !== 1 ? "s" : ""}`);
         }
         if (item.tipo === "tarea") meta.push("Tarea");
         else if (item.tipo === "evento") meta.push("Evento");
         else meta.push("Fecha importante");
-        const nombres = window.AgendaCalendario._nombrePersonas(item.persona_ids, personas);
+        const nombres = AgendaCalendario._nombrePersonas(item.persona_ids, personas);
         if (nombres) meta.push(nombres);
         cuerpo.createEl("small", { text: meta.join(" · ") });
         if (onClick && item.tipo !== "fecha_importante") card.onclick = () => onClick(item);
@@ -161,14 +165,14 @@ window.AgendaCalendario = {
 
     renderProximos: (parent, actividades, personas, opts = {}) => {
         const wrap = parent.createEl("div", { cls: "agenda-cal-proximos" });
-        const items = window.AgendaCalendario.proximos(actividades, personas, opts.dias || 30)
+        const items = AgendaCalendario.proximos(actividades, personas, opts.dias || 30)
             .filter(it => !opts.personaId || (it.persona_ids || []).includes(opts.personaId) || it.tipo === "fecha_importante" && it.persona_ids?.includes(opts.personaId));
         if (!items.length) {
             wrap.createEl("p", { text: "Sin eventos próximos.", style: "color: var(--text-muted); font-style: italic; margin: 0;" });
             return wrap;
         }
         items.slice(0, opts.max || 8).forEach(it =>
-            window.AgendaCalendario.renderTarjetaProximo(wrap, it, personas, opts.onEdit));
+            AgendaCalendario.renderTarjetaProximo(wrap, it, personas, opts.onEdit));
         return wrap;
     },
 
@@ -199,19 +203,19 @@ window.AgendaCalendario = {
                     opts.onEdit(act);
                 };
             }
-            const hitos = window.AgendaCalendario.hitosTimeline(act);
+            const hitos = AgendaCalendario.hitosTimeline(act);
             const ul = item.createEl("ul", { cls: "agenda-cal-hitos" });
             hitos.forEach(h => {
                 const li = ul.createEl("li");
                 li.createEl("span", { text: h.label, cls: "agenda-cal-hito-label" });
-                li.createEl("span", { text: window.AgendaCalendario.formatearFechaHora(h.fecha) });
+                li.createEl("span", { text: AgendaCalendario.formatearFechaHora(h.fecha) });
             });
             if (act.fecha) {
                 const prog = ul.createEl("li");
                 prog.createEl("span", { text: "Programado", cls: "agenda-cal-hito-label" });
-                prog.createEl("span", { text: window.AgendaCalendario.formatearFecha(act.fecha) });
+                prog.createEl("span", { text: AgendaCalendario.formatearFecha(act.fecha) });
             }
-            const nombres = window.AgendaCalendario._nombrePersonas(act.persona_ids, personas);
+            const nombres = AgendaCalendario._nombrePersonas(act.persona_ids, personas);
             if (nombres) item.createEl("small", { text: `👤 ${nombres}`, style: "color: var(--text-muted);" });
         });
         return lista;
@@ -236,7 +240,7 @@ window.AgendaCalendario = {
         const btnNext = nav.createEl("button", { text: "▶", cls: "agenda-cal-nav-btn" });
         const gridHost = cont.createEl("div");
 
-        const importantes = window.AgendaCalendario.fechasImportantes(personas, 366);
+        const importantes = AgendaCalendario.fechasImportantes(personas, 366);
 
         const pintar = () => {
             gridHost.empty();
@@ -246,7 +250,7 @@ window.AgendaCalendario = {
             const primerDia = new Date(anio, mes, 1);
             let offset = (primerDia.getDay() + 6) % 7;
             for (let i = 0; i < offset; i++) grid.createEl("div", { cls: "agenda-cal-celda agenda-cal-celda--vacia" });
-            const total = window.AgendaCalendario._diasMes(anio, mes);
+            const total = AgendaCalendario._diasMes(anio, mes);
             const hoyStr = hoy.toISOString().slice(0, 10);
             for (let d = 1; d <= total; d++) {
                 const fecha = `${anio}-${String(mes + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -254,7 +258,7 @@ window.AgendaCalendario = {
                     cls: `agenda-cal-celda${fecha === hoyStr ? " agenda-cal-celda--hoy" : ""}`
                 });
                 celda.createEl("span", { text: String(d), cls: "agenda-cal-dia-num" });
-                const items = window.AgendaCalendario._itemsEnDia(fecha, actividades, importantes);
+                const items = AgendaCalendario._itemsEnDia(fecha, actividades, importantes);
                 if (opts.personaId) {
                     items.filter(it =>
                         it.tipo === "fecha_importante" ? it.persona_ids?.includes(opts.personaId)

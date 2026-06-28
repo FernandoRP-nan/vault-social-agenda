@@ -1,6 +1,10 @@
+/* agenda_astral.ts — migrado a módulo TS */
+// @ts-nocheck
+import { AgendaPerfil } from "./agenda_perfil";
+
 /* agenda_astral.js - Cálculo y visualización de carta natal */
 
-window.AgendaAstral = {
+export const AgendaAstral = {
     SIGNOS: [
         { n: "Aries", s: "♈" }, { n: "Tauro", s: "♉" }, { n: "Géminis", s: "♊" },
         { n: "Cáncer", s: "♋" }, { n: "Leo", s: "♌" }, { n: "Virgo", s: "♍" },
@@ -78,14 +82,14 @@ window.AgendaAstral = {
     _deg: (r) => r * 180 / Math.PI,
 
     _lonASigno: (lon) => {
-        const idx = Math.floor(window.AgendaAstral._norm360(lon) / 30) % 12;
-        const enSigno = window.AgendaAstral._norm360(lon) % 30;
-        const signo = window.AgendaAstral.SIGNOS[idx];
+        const idx = Math.floor(AgendaAstral._norm360(lon) / 30) % 12;
+        const enSigno = AgendaAstral._norm360(lon) % 30;
+        const signo = AgendaAstral.SIGNOS[idx];
         return { ...signo, idx, grado: enSigno, minuto: Math.floor((enSigno % 1) * 60) };
     },
 
     formatearPosicion: (lon) => {
-        const p = window.AgendaAstral._lonASigno(lon);
+        const p = AgendaAstral._lonASigno(lon);
         return `${p.s} ${Math.floor(p.grado)}°${String(p.minuto).padStart(2, "0")}' ${p.n}`;
     },
 
@@ -118,12 +122,12 @@ window.AgendaAstral = {
     },
 
     _kepler: (M, e) => {
-        const m = window.AgendaAstral._rad(M);
+        const m = AgendaAstral._rad(M);
         let E = m;
         for (let i = 0; i < 8; i++) E = m + e * Math.sin(E);
         const xv = Math.cos(E) - e;
         const yv = Math.sqrt(1 - e * e) * Math.sin(E);
-        return window.AgendaAstral._deg(Math.atan2(yv, xv));
+        return AgendaAstral._deg(Math.atan2(yv, xv));
     },
 
     // Posiciones geocéntricas eclípticas (basado en Schlyter / Meeus)
@@ -131,28 +135,28 @@ window.AgendaAstral = {
         const d = jd - 2451543.5;
         const rad = (g) => g * Math.PI / 180;
         const helio = (N, i, w, a, e, M) => {
-            const E = window.AgendaAstral._kepler(M, e);
+            const E = AgendaAstral._kepler(M, e);
             const xv = a * (Math.cos(rad(E)) - e);
             const yv = a * Math.sqrt(1 - e * e) * Math.sin(rad(E));
-            const v = window.AgendaAstral._deg(Math.atan2(yv, xv));
+            const v = AgendaAstral._deg(Math.atan2(yv, xv));
             const lon = v + w;
             const r = a * (1 - e * Math.cos(rad(E)));
             const xh = r * (Math.cos(rad(N)) * Math.cos(rad(lon)) - Math.sin(rad(N)) * Math.sin(rad(lon)) * Math.cos(rad(i)));
             const yh = r * (Math.sin(rad(N)) * Math.cos(rad(lon)) + Math.cos(rad(N)) * Math.sin(rad(lon)) * Math.cos(rad(i)));
             const zh = r * Math.sin(rad(lon)) * Math.sin(rad(i));
-            return { xh, yh, zh, lon: window.AgendaAstral._norm360(lon + N) };
+            return { xh, yh, zh, lon: AgendaAstral._norm360(lon + N) };
         };
         const geo = (xh, yh, zh, xs, ys, zs) =>
-            window.AgendaAstral._norm360(window.AgendaAstral._deg(Math.atan2(yh - ys, xh - xs)));
+            AgendaAstral._norm360(AgendaAstral._deg(Math.atan2(yh - ys, xh - xs)));
 
         const wSol = 282.9404 + 4.70935e-5 * d;
         const eSol = 0.016709 - 1.151e-9 * d;
         const MSol = 356.0470 + 0.9856002585 * d;
-        const ESol = window.AgendaAstral._kepler(MSol, eSol);
+        const ESol = AgendaAstral._kepler(MSol, eSol);
         const xSol = Math.cos(rad(ESol)) - eSol;
         const ySol = Math.sin(rad(ESol)) * Math.sqrt(1 - eSol * eSol);
-        const vSol = window.AgendaAstral._deg(Math.atan2(ySol, xSol));
-        const lonSol = window.AgendaAstral._norm360(vSol + wSol);
+        const vSol = AgendaAstral._deg(Math.atan2(ySol, xSol));
+        const lonSol = AgendaAstral._norm360(vSol + wSol);
         const rSol = 1.0000002 * (1 - eSol * Math.cos(rad(ESol)));
         const xs = rSol * Math.cos(rad(lonSol));
         const ys = rSol * Math.sin(rad(lonSol));
@@ -164,13 +168,13 @@ window.AgendaAstral = {
         const em = 0.054900;
         const am = 60.2666;
         const Mm = 115.3654 + 13.0649929509 * d;
-        const Em = window.AgendaAstral._kepler(Mm, em);
+        const Em = AgendaAstral._kepler(Mm, em);
         const rm = am * (1 - em * Math.cos(rad(Em)));
-        const vm = window.AgendaAstral._deg(Math.atan2(
+        const vm = AgendaAstral._deg(Math.atan2(
             rm * Math.sqrt(1 - em * em) * Math.sin(rad(Em)),
             rm * (Math.cos(rad(Em)) - em)
         ));
-        const lonm = window.AgendaAstral._norm360(vm + wm);
+        const lonm = AgendaAstral._norm360(vm + wm);
         const xm = rm * (Math.cos(rad(Nm)) * Math.cos(rad(lonm)) - Math.sin(rad(Nm)) * Math.sin(rad(lonm)) * Math.cos(rad(im)));
         const ym = rm * (Math.sin(rad(Nm)) * Math.cos(rad(lonm)) + Math.cos(rad(Nm)) * Math.sin(rad(lonm)) * Math.cos(rad(im)));
         const zm = rm * Math.sin(rad(lonm)) * Math.sin(rad(im));
@@ -198,7 +202,7 @@ window.AgendaAstral = {
 
         return {
             sol: lonSol,
-            luna: window.AgendaAstral._norm360(window.AgendaAstral._deg(Math.atan2(ym, xm))),
+            luna: AgendaAstral._norm360(AgendaAstral._deg(Math.atan2(ym, xm))),
             mercurio: geo(pMerc.xh, pMerc.yh, pMerc.zh, xs, ys, zs),
             venus: geo(pVenus.xh, pVenus.yh, pVenus.zh, xs, ys, zs),
             marte: geo(pMarte.xh, pMarte.yh, pMarte.zh, xs, ys, zs),
@@ -215,47 +219,47 @@ window.AgendaAstral = {
     _lst: (jd, lon) => {
         const d = jd - 2451545.0;
         let gmst = 280.46061837 + 360.98564736629 * d;
-        gmst = window.AgendaAstral._norm360(gmst);
-        return window.AgendaAstral._norm360(gmst + lon);
+        gmst = AgendaAstral._norm360(gmst);
+        return AgendaAstral._norm360(gmst + lon);
     },
 
     _ascendente: (jd, lat, lon) => {
-        const lst = window.AgendaAstral._lst(jd, lon);
-        const eps = window.AgendaAstral._oblicuidad(jd);
-        const ramc = window.AgendaAstral._rad(lst);
-        const phi = window.AgendaAstral._rad(lat);
-        const ep = window.AgendaAstral._rad(eps);
+        const lst = AgendaAstral._lst(jd, lon);
+        const eps = AgendaAstral._oblicuidad(jd);
+        const ramc = AgendaAstral._rad(lst);
+        const phi = AgendaAstral._rad(lat);
+        const ep = AgendaAstral._rad(eps);
         const asc = Math.atan2(
             Math.cos(ramc),
             -(Math.sin(ramc) * Math.cos(ep) + Math.tan(phi) * Math.sin(ep))
         );
-        return window.AgendaAstral._norm360(window.AgendaAstral._deg(asc));
+        return AgendaAstral._norm360(AgendaAstral._deg(asc));
     },
 
     _mediocielo: (jd, lon) => {
-        const lst = window.AgendaAstral._lst(jd, lon);
-        const eps = window.AgendaAstral._oblicuidad(jd);
-        const mc = Math.atan2(Math.tan(window.AgendaAstral._rad(lst)), Math.cos(window.AgendaAstral._rad(eps)));
-        return window.AgendaAstral._norm360(window.AgendaAstral._deg(mc));
+        const lst = AgendaAstral._lst(jd, lon);
+        const eps = AgendaAstral._oblicuidad(jd);
+        const mc = Math.atan2(Math.tan(AgendaAstral._rad(lst)), Math.cos(AgendaAstral._rad(eps)));
+        return AgendaAstral._norm360(AgendaAstral._deg(mc));
     },
 
     _casaSignoEntero: (lonPlaneta, lonAsc) => {
-        const base = Math.floor(window.AgendaAstral._norm360(lonAsc) / 30);
-        const signo = Math.floor(window.AgendaAstral._norm360(lonPlaneta) / 30);
+        const base = Math.floor(AgendaAstral._norm360(lonAsc) / 30);
+        const signo = Math.floor(AgendaAstral._norm360(lonPlaneta) / 30);
         let casa = signo - base + 1;
         if (casa <= 0) casa += 12;
         return casa;
     },
 
     calcularCartaNatal: (persona) => {
-        if (!window.AgendaPerfil) return null;
-        const datos = window.AgendaPerfil.obtenerDatosNatal(persona);
+        if (!AgendaPerfil) return null;
+        const datos = AgendaPerfil.obtenerDatosNatal(persona);
         if (!datos) return null;
 
         const hora = datos.hora || "12:00";
-        const utc = window.AgendaAstral._localAUtc(datos.fecha, hora, datos.zonaHoraria);
-        const jd = window.AgendaAstral._julianDay(utc);
-        const pos = window.AgendaAstral._posiciones(jd);
+        const utc = AgendaAstral._localAUtc(datos.fecha, hora, datos.zonaHoraria);
+        const jd = AgendaAstral._julianDay(utc);
+        const pos = AgendaAstral._posiciones(jd);
 
         const carta = {
             solar: datos.horaDesconocida,
@@ -270,33 +274,33 @@ window.AgendaAstral = {
 
         if (!datos.horaDesconocida) {
             carta.ascendente = {
-                lon: window.AgendaAstral._ascendente(jd, datos.latitud, datos.longitud),
+                lon: AgendaAstral._ascendente(jd, datos.latitud, datos.longitud),
                 etiqueta: "Ascendente"
             };
             carta.mediocielo = {
-                lon: window.AgendaAstral._mediocielo(jd, datos.longitud),
+                lon: AgendaAstral._mediocielo(jd, datos.longitud),
                 etiqueta: "Medio Cielo"
             };
         }
 
-        window.AgendaAstral.CUERPOS.forEach(c => {
+        AgendaAstral.CUERPOS.forEach(c => {
             const lon = pos[c.id];
             const item = {
                 ...c,
                 lon,
-                posicion: window.AgendaAstral.formatearPosicion(lon),
+                posicion: AgendaAstral.formatearPosicion(lon),
                 casa: null
             };
-            if (carta.ascendente) item.casa = window.AgendaAstral._casaSignoEntero(lon, carta.ascendente.lon);
+            if (carta.ascendente) item.casa = AgendaAstral._casaSignoEntero(lon, carta.ascendente.lon);
             carta.cuerpos.push(item);
         });
 
         if (carta.ascendente) {
-            carta.ascendente.posicion = window.AgendaAstral.formatearPosicion(carta.ascendente.lon);
+            carta.ascendente.posicion = AgendaAstral.formatearPosicion(carta.ascendente.lon);
             carta.ascendente.casa = 1;
         }
         if (carta.mediocielo) {
-            carta.mediocielo.posicion = window.AgendaAstral.formatearPosicion(carta.mediocielo.lon);
+            carta.mediocielo.posicion = AgendaAstral.formatearPosicion(carta.mediocielo.lon);
             carta.mediocielo.casa = 10;
         }
 
@@ -421,22 +425,22 @@ window.AgendaAstral = {
     },
 
     _significadoCasa: (num) => {
-        const c = window.AgendaAstral.CASAS[num];
+        const c = AgendaAstral.CASAS[num];
         return c ? c.practica : "";
     },
 
     _interpretarSigno: (lon) => {
-        const signo = window.AgendaAstral._lonASigno(lon);
-        const desc = window.AgendaAstral.SIGNO_DESC[signo.n] || "expresas esta energía de forma particular";
+        const signo = AgendaAstral._lonASigno(lon);
+        const desc = AgendaAstral.SIGNO_DESC[signo.n] || "expresas esta energía de forma particular";
         return { signo: signo.n, simbolo: signo.s, desc };
     },
 
     _interpretarCuerpo: (cuerpo, lon, casa) => {
-        const meta = window.AgendaAstral.CUERPOS.find(x => x.id === cuerpo.id) || cuerpo;
-        const { signo, desc } = window.AgendaAstral._interpretarSigno(lon);
+        const meta = AgendaAstral.CUERPOS.find(x => x.id === cuerpo.id) || cuerpo;
+        const { signo, desc } = AgendaAstral._interpretarSigno(lon);
         let txt = `${meta.rol}. En ${signo} ${desc}.`;
         if (casa) {
-            const c = window.AgendaAstral.CASAS[casa];
+            const c = AgendaAstral.CASAS[casa];
             if (c) txt += ` En ${c.t.toLowerCase()} (${casa}): ${c.practica}.`;
         } else {
             txt += ` Esto colorea tu ${meta.area}.`;
@@ -445,8 +449,8 @@ window.AgendaAstral = {
     },
 
     _interpretarAngulo: (tipo, lon) => {
-        const ang = window.AgendaAstral.ANGULOS[tipo];
-        const { signo, desc } = window.AgendaAstral._interpretarSigno(lon);
+        const ang = AgendaAstral.ANGULOS[tipo];
+        const { signo, desc } = AgendaAstral._interpretarSigno(lon);
         if (tipo === "ascendente") {
             return `${ang.rol}. Con Ascendente en ${signo}, ${desc}; así te perciben al conocerte y es la lente con la que encaras lo nuevo.`;
         }
@@ -454,10 +458,10 @@ window.AgendaAstral = {
     },
 
     renderCarta: (contenedor, persona, opts = {}) => {
-        window.AgendaAstral.injectStyles();
-        window.AgendaAstral._vaciar(contenedor);
+        AgendaAstral.injectStyles();
+        AgendaAstral._vaciar(contenedor);
 
-        const carta = persona.carta_natal || window.AgendaAstral.calcularCartaNatal(persona);
+        const carta = persona.carta_natal || AgendaAstral.calcularCartaNatal(persona);
         if (!carta) {
             contenedor.createEl("p", {
                 cls: "agenda-carta-vacio",
@@ -470,11 +474,11 @@ window.AgendaAstral = {
         const wrap = contenedor.createEl("div", { cls: "agenda-carta-wrap" });
 
         if (!compacto) {
-            wrap.createEl("div", { cls: "agenda-carta-intro", text: window.AgendaAstral.INTRO_CARTA });
-            wrap.createEl("div", { cls: "agenda-carta-ejemplo", text: window.AgendaAstral.LEER_CARTA });
+            wrap.createEl("div", { cls: "agenda-carta-intro", text: AgendaAstral.INTRO_CARTA });
+            wrap.createEl("div", { cls: "agenda-carta-ejemplo", text: AgendaAstral.LEER_CARTA });
         }
 
-        const bDatos = window.AgendaAstral._bloque(wrap, "📋 Datos de nacimiento",
+        const bDatos = AgendaAstral._bloque(wrap, "📋 Datos de nacimiento",
             compacto ? null : "Base usada para el cálculo de posiciones planetarias.");
         const datos = bDatos.createEl("div", { cls: "agenda-carta-datos" });
         const horaTxt = carta.hora ? `${carta.fecha} · ${carta.hora}` : `${carta.fecha} · mediodía local (carta solar)`;
@@ -482,55 +486,55 @@ window.AgendaAstral = {
         if (carta.lugar) datos.createEl("span", { text: `📍 ${carta.lugar}` });
 
         if (carta.solar) {
-            wrap.createEl("div", { cls: "agenda-carta-nota", text: window.AgendaAstral.NOTA_CARTA_SOLAR });
+            wrap.createEl("div", { cls: "agenda-carta-nota", text: AgendaAstral.NOTA_CARTA_SOLAR });
         }
 
         const sol = carta.cuerpos.find(c => c.id === "sol");
         const luna = carta.cuerpos.find(c => c.id === "luna");
-        const bPilares = window.AgendaAstral._bloque(wrap, "✨ Lo esencial para ti",
+        const bPilares = AgendaAstral._bloque(wrap, "✨ Lo esencial para ti",
             compacto ? null : "Interpretación directa de los cuatro puntos más personales de tu carta.");
         const pilares = bPilares.createEl("div", { cls: "agenda-carta-pilares" });
 
         if (sol) {
-            window.AgendaAstral._pilar(pilares, {
+            AgendaAstral._pilar(pilares, {
                 etiqueta: `${sol.sim} Sol · signo solar`,
                 rol: sol.rol,
                 posicion: sol.posicion,
-                significado: window.AgendaAstral._interpretarCuerpo(sol, sol.lon, sol.casa),
+                significado: AgendaAstral._interpretarCuerpo(sol, sol.lon, sol.casa),
                 destacado: true
             });
         }
         if (luna) {
-            window.AgendaAstral._pilar(pilares, {
+            AgendaAstral._pilar(pilares, {
                 etiqueta: `${luna.sim} Luna · signo lunar`,
                 rol: luna.rol,
                 posicion: luna.posicion,
-                significado: window.AgendaAstral._interpretarCuerpo(luna, luna.lon, luna.casa),
+                significado: AgendaAstral._interpretarCuerpo(luna, luna.lon, luna.casa),
                 destacado: true
             });
         }
         if (carta.ascendente) {
-            const ang = window.AgendaAstral.ANGULOS.ascendente;
-            window.AgendaAstral._pilar(pilares, {
+            const ang = AgendaAstral.ANGULOS.ascendente;
+            AgendaAstral._pilar(pilares, {
                 etiqueta: `↑ ${ang.t}`,
                 rol: ang.rol,
                 posicion: carta.ascendente.posicion,
-                significado: window.AgendaAstral._interpretarAngulo("ascendente", carta.ascendente.lon),
+                significado: AgendaAstral._interpretarAngulo("ascendente", carta.ascendente.lon),
                 destacado: true
             });
         }
         if (carta.mediocielo) {
-            const ang = window.AgendaAstral.ANGULOS.mediocielo;
-            window.AgendaAstral._pilar(pilares, {
+            const ang = AgendaAstral.ANGULOS.mediocielo;
+            AgendaAstral._pilar(pilares, {
                 etiqueta: `⌂ ${ang.t}`,
                 rol: ang.rol,
                 posicion: carta.mediocielo.posicion,
-                significado: window.AgendaAstral._interpretarAngulo("mediocielo", carta.mediocielo.lon),
+                significado: AgendaAstral._interpretarAngulo("mediocielo", carta.mediocielo.lon),
                 destacado: true
             });
         }
 
-        const bPlanetas = window.AgendaAstral._bloque(wrap, "🪐 El resto de tu carta" + (carta.ascendente ? "" : " · signos"),
+        const bPlanetas = AgendaAstral._bloque(wrap, "🪐 El resto de tu carta" + (carta.ascendente ? "" : " · signos"),
             compacto ? null : "Cada fila combina planeta + signo + casa (si hay hora) en un texto aplicado a tu caso.");
         const lista = bPlanetas.createEl("div", { cls: "agenda-carta-planetas" });
 
@@ -541,7 +545,7 @@ window.AgendaAstral = {
             colNom.createEl("div", { cls: "agenda-carta-planeta-rol", text: c.rol });
             fila.createEl("div", { cls: "agenda-carta-planeta-pos", text: c.posicion });
             if (c.casa) {
-                const casaInfo = window.AgendaAstral.CASAS[c.casa];
+                const casaInfo = AgendaAstral.CASAS[c.casa];
                 fila.createEl("span", {
                     cls: "agenda-carta-planeta-casa",
                     text: casaInfo ? casaInfo.t.replace(/^Casa [IVX]+ · /, "C. ") : `C. ${c.casa}`
@@ -549,14 +553,14 @@ window.AgendaAstral = {
             }
             fila.createEl("div", {
                 cls: "agenda-carta-planeta-sig",
-                text: window.AgendaAstral._interpretarCuerpo(c, c.lon, c.casa)
+                text: AgendaAstral._interpretarCuerpo(c, c.lon, c.casa)
             });
         });
 
         if (!compacto && carta.ascendente) {
-            const bCasas = window.AgendaAstral._bloque(wrap, "🏠 Qué significa cada casa", window.AgendaAstral.NOTA_CASAS);
+            const bCasas = AgendaAstral._bloque(wrap, "🏠 Qué significa cada casa", AgendaAstral.NOTA_CASAS);
             const gridCasas = bCasas.createEl("div", { cls: "agenda-carta-casas" });
-            Object.entries(window.AgendaAstral.CASAS).forEach(([, info]) => {
+            Object.entries(AgendaAstral.CASAS).forEach(([, info]) => {
                 const item = gridCasas.createEl("div", { cls: "agenda-carta-casa-item" });
                 item.createEl("strong", { text: info.t });
                 item.createEl("span", { text: `${info.d} ${info.practica}.` });
@@ -570,9 +574,9 @@ window.AgendaAstral = {
     },
 
     renderResumenEditor: (contenedor, persona) => {
-        window.AgendaAstral.injectStyles();
-        window.AgendaAstral._vaciar(contenedor);
-        const evalCarta = window.AgendaPerfil.evaluarCartaAstral(persona);
+        AgendaAstral.injectStyles();
+        AgendaAstral._vaciar(contenedor);
+        const evalCarta = AgendaPerfil.evaluarCartaAstral(persona);
         if (!evalCarta.listo) {
             contenedor.createEl("p", {
                 cls: "agenda-carta-editor-vacio",
@@ -580,7 +584,7 @@ window.AgendaAstral = {
             });
             return;
         }
-        const carta = window.AgendaAstral.calcularCartaNatal(persona);
+        const carta = AgendaAstral.calcularCartaNatal(persona);
         if (!carta) return;
 
         const wrap = contenedor.createEl("div", { cls: "agenda-carta-editor-resumen" });
@@ -601,5 +605,5 @@ window.AgendaAstral = {
     },
 
     renderPreview: (contenedor, persona) =>
-        window.AgendaAstral.renderCarta(contenedor, persona, { compacto: true })
+        AgendaAstral.renderCarta(contenedor, persona, { compacto: true })
 };

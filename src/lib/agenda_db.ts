@@ -1,6 +1,16 @@
+/* agenda_db.ts — migrado a módulo TS */
+// @ts-nocheck
+import { ScriptsRuntime } from "../runtime/scripts-runtime";
+import { AgendaCalendario } from "./agenda_calendario";
+import { AgendaHistorial } from "./agenda_historial";
+import { AgendaPerfil } from "./agenda_perfil";
+import { AgendaPreferencias } from "./agenda_preferencias";
+
+import { getTaskBoardBridge } from "../bridge-registry";
+
 /* agenda_db.js - Persistencia SQLite para agenda social */
 
-window.AgendaDB = {
+export const AgendaDB = {
     DB_RELATIVE: ".obsidian/plugins-data/vault-social-agenda/agenda_social.db",
     KANBAN_DB_RELATIVE: ".obsidian/plugins-data/vault-task-board/kanban_tareas.db",
     NOTE_PATH: "Plugins/vault-social-agenda/dashboard",
@@ -65,19 +75,19 @@ window.AgendaDB = {
 
     _relacionesVacias: () => {
         const r = {};
-        window.AgendaDB.TIPOS_RELACION.forEach(t => { r[t] = []; });
+        AgendaDB.TIPOS_RELACION.forEach(t => { r[t] = []; });
         return r;
     },
 
-    esTipoCompartido: (tipo) => window.AgendaDB.TIPOS_COMPARTIDOS.includes(tipo),
+    esTipoCompartido: (tipo) => AgendaDB.TIPOS_COMPARTIDOS.includes(tipo),
 
     vincularRelacion: (relaciones, tipo, personaId) => {
-        const base = { ...window.AgendaDB._relacionesVacias(), ...relaciones };
-        if (window.AgendaDB.esTipoCompartido(tipo)) {
+        const base = { ...AgendaDB._relacionesVacias(), ...relaciones };
+        if (AgendaDB.esTipoCompartido(tipo)) {
             if (!base[tipo].includes(personaId)) base[tipo].push(personaId);
             return base;
         }
-        window.AgendaDB.TIPOS_EXCLUSIVOS.forEach(t => {
+        AgendaDB.TIPOS_EXCLUSIVOS.forEach(t => {
             base[t] = (base[t] || []).filter(id => id !== personaId);
         });
         if (!base[tipo].includes(personaId)) base[tipo].push(personaId);
@@ -86,7 +96,7 @@ window.AgendaDB = {
 
     idsVinculadosRelaciones: (relaciones, excluirTipo = null) => {
         const ids = new Set();
-        window.AgendaDB.TIPOS_EXCLUSIVOS.forEach(t => {
+        AgendaDB.TIPOS_EXCLUSIVOS.forEach(t => {
             if (t === excluirTipo) return;
             (relaciones[t] || []).forEach(id => ids.add(id));
         });
@@ -94,29 +104,29 @@ window.AgendaDB = {
     },
 
     normalizarRelacionesExclusivas: (relaciones) => {
-        const base = window.AgendaDB._relacionesVacias();
+        const base = AgendaDB._relacionesVacias();
         const vistosExcl = new Set();
-        window.AgendaDB.TIPOS_EXCLUSIVOS.forEach(t => {
+        AgendaDB.TIPOS_EXCLUSIVOS.forEach(t => {
             (relaciones?.[t] || []).forEach(id => {
                 if (vistosExcl.has(id)) return;
                 base[t].push(id);
                 vistosExcl.add(id);
             });
         });
-        window.AgendaDB.TIPOS_COMPARTIDOS.forEach(t => {
+        AgendaDB.TIPOS_COMPARTIDOS.forEach(t => {
             base[t] = [...new Set(relaciones?.[t] || [])];
         });
         return base;
     },
 
-    init: async (SQL, dbPath) => window.ScriptsRuntime.initDb(SQL, dbPath, (db, esNueva) => {
-        db.run(window.AgendaDB.SCHEMA_PERSONAS);
-        db.run(window.AgendaDB.SCHEMA_RELACIONES);
-        db.run(window.AgendaDB.SCHEMA_CONFIG);
-        db.run(window.AgendaDB.SCHEMA_ACTIVIDADES);
-        if (window.AgendaHistorial) window.AgendaHistorial.init(db);
-        window.AgendaDB._migrarEsquema(db, esNueva ? null : dbPath);
-        window.AgendaDB._migrarRelacionesEsquema(db, dbPath);
+    init: async (SQL, dbPath) => ScriptsRuntime.initDb(SQL, dbPath, (db, esNueva) => {
+        db.run(AgendaDB.SCHEMA_PERSONAS);
+        db.run(AgendaDB.SCHEMA_RELACIONES);
+        db.run(AgendaDB.SCHEMA_CONFIG);
+        db.run(AgendaDB.SCHEMA_ACTIVIDADES);
+        if (AgendaHistorial) AgendaHistorial.init(db);
+        AgendaDB._migrarEsquema(db, esNueva ? null : dbPath);
+        AgendaDB._migrarRelacionesEsquema(db, dbPath);
     }),
 
     _migrarEsquema: (db, dbPath) => {
@@ -150,13 +160,13 @@ window.AgendaDB = {
                 cambio = true;
             }
         });
-        if (cambio && dbPath) window.AgendaDB.guardar(db, dbPath);
+        if (cambio && dbPath) AgendaDB.guardar(db, dbPath);
     },
 
     _migrarRelacionesEsquema: (db, dbPath) => {
         const fila = db.exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='relaciones'")[0]?.values?.[0];
         const sql = fila?.[0] || "";
-        const esperado = window.AgendaDB.TIPOS_RELACION_SQL;
+        const esperado = AgendaDB.TIPOS_RELACION_SQL;
         if (!sql || sql.includes("mejores_amigos") && sql.includes("trabajo")) return;
 
         db.run(`CREATE TABLE relaciones_new (
@@ -170,10 +180,10 @@ window.AgendaDB = {
         db.run("INSERT INTO relaciones_new SELECT * FROM relaciones");
         db.run("DROP TABLE relaciones");
         db.run("ALTER TABLE relaciones_new RENAME TO relaciones");
-        if (dbPath) window.AgendaDB.guardar(db, dbPath);
+        if (dbPath) AgendaDB.guardar(db, dbPath);
     },
 
-    guardar: (db, dbPath) => window.ScriptsRuntime.guardarDb(db, dbPath),
+    guardar: (db, dbPath) => ScriptsRuntime.guardarDb(db, dbPath),
 
     _json: (val, fallback) => {
         try { return JSON.parse(val); } catch { return fallback; }
@@ -201,7 +211,7 @@ window.AgendaDB = {
         redes: { instagram: "", twitter: "", facebook: "" },
         gustos: {},
         disgustos: {},
-        relaciones: window.AgendaDB._relacionesVacias(),
+        relaciones: AgendaDB._relacionesVacias(),
         actividad_social: { tipo: "semanas", valor: 0 },
         mbti: "",
         eneagrama: "",
@@ -220,11 +230,11 @@ window.AgendaDB = {
         debilidades: []
     }),
 
-    _filaAPersona: (r, relMap) => window.AgendaPerfil.enriquecer({
+    _filaAPersona: (r, relMap) => AgendaPerfil.enriquecer({
         id: r[0],
         nombre: r[1],
-        alias: window.AgendaDB._json(r[2], []),
-        grupos: window.AgendaDB._json(r[23], []),
+        alias: AgendaDB._json(r[2], []),
+        grupos: AgendaDB._json(r[23], []),
         fecha_nacimiento: r[3] || "",
         hora_nacimiento: r[33] || "",
         hora_nacimiento_desconocida: !!r[34],
@@ -236,27 +246,27 @@ window.AgendaDB = {
         ciudad: r[5] || "",
         contacto: { telefono: r[6] || "", email: r[7] || "" },
         redes: { instagram: r[8] || "", twitter: r[9] || "", facebook: r[10] || "" },
-        gustos: window.AgendaPreferencias.normalizar(window.AgendaDB._json(r[11], {})),
+        gustos: AgendaPreferencias.normalizar(AgendaDB._json(r[11], {})),
         notas: r[12] || "",
-        actividad_social: window.AgendaDB.normalizarActividad({
+        actividad_social: AgendaDB.normalizarActividad({
             dias: r[14] || 0, semanas: r[15] || 0, meses: r[16] || 0
         }),
-        relaciones: { ...window.AgendaDB._relacionesVacias(), ...(relMap.get(r[0]) || {}) },
+        relaciones: { ...AgendaDB._relacionesVacias(), ...(relMap.get(r[0]) || {}) },
         mbti: r[17] || "",
         eneagrama: r[18] || "",
         relacion_conmigo: r[19] || "",
         color_favorito: r[20] || "",
-        disgustos: window.AgendaPreferencias.normalizar(window.AgendaDB._json(r[21], {})),
+        disgustos: AgendaPreferencias.normalizar(AgendaDB._json(r[21], {})),
         foto: r[22] || "",
-        puntos_destacables: window.AgendaPerfil.normalizarLista(window.AgendaDB._json(r[24], [])),
+        puntos_destacables: AgendaPerfil.normalizarLista(AgendaDB._json(r[24], [])),
         iq_min: r[25] || 0,
         iq_max: r[26] || 0,
-        inteligencias: window.AgendaPerfil.normalizarInteligencias(window.AgendaDB._json(r[27], {})),
+        inteligencias: AgendaPerfil.normalizarInteligencias(AgendaDB._json(r[27], {})),
         moralidad: r[28] || "",
         etica: r[29] || "",
         potencial: r[30] || "",
-        habitos: window.AgendaPerfil.normalizarLista(window.AgendaDB._json(r[31], [])),
-        debilidades: window.AgendaPerfil.normalizarLista(window.AgendaDB._json(r[32], []))
+        habitos: AgendaPerfil.normalizarLista(AgendaDB._json(r[31], [])),
+        debilidades: AgendaPerfil.normalizarLista(AgendaDB._json(r[32], []))
     }),
 
     _obtenerMapaRelaciones: (db) => {
@@ -264,7 +274,7 @@ window.AgendaDB = {
         const stmt = db.prepare("SELECT origen_id, destino_id, tipo FROM relaciones");
         while (stmt.step()) {
             const [origen, destino, tipo] = stmt.get();
-            if (!mapa.has(origen)) mapa.set(origen, window.AgendaDB._relacionesVacias());
+            if (!mapa.has(origen)) mapa.set(origen, AgendaDB._relacionesVacias());
             if (mapa.get(origen)[tipo]) mapa.get(origen)[tipo].push(destino);
         }
         stmt.free();
@@ -272,7 +282,7 @@ window.AgendaDB = {
     },
 
     obtenerTodas: (db) => {
-        const relMap = window.AgendaDB._obtenerMapaRelaciones(db);
+        const relMap = AgendaDB._obtenerMapaRelaciones(db);
         const stmt = db.prepare(`SELECT id, nombre, alias, fecha_nacimiento, zona_horaria, ciudad,
             telefono, email, instagram, twitter, facebook, gustos, notas, tags,
             actividad_dias, actividad_semanas, actividad_meses, mbti, eneagrama, relacion_conmigo, color_favorito, disgustos, foto, grupos,
@@ -280,40 +290,40 @@ window.AgendaDB = {
             hora_nacimiento, hora_nacimiento_desconocida, latitud, longitud, pais_nacimiento, estado_nacimiento
             FROM personas ORDER BY nombre COLLATE NOCASE`);
         const rows = [];
-        while (stmt.step()) rows.push(window.AgendaDB._filaAPersona(stmt.get(), relMap));
+        while (stmt.step()) rows.push(AgendaDB._filaAPersona(stmt.get(), relMap));
         stmt.free();
         return rows;
     },
 
     cargarEstado: (db, opciones = {}) => {
-        const personas = window.AgendaDB.obtenerTodas(db);
+        const personas = AgendaDB.obtenerTodas(db);
         if (opciones.SQL && opciones.kanbanPath) {
-            window.AgendaDB.sincronizarEstadosDesdeKanban(db, opciones.dbPath, opciones.SQL, opciones.kanbanPath);
-            window.AgendaDB._sincronizarTareasHuerfanas(db, opciones.dbPath, opciones.SQL, opciones.kanbanPath);
+            AgendaDB.sincronizarEstadosDesdeKanban(db, opciones.dbPath, opciones.SQL, opciones.kanbanPath);
+            AgendaDB._sincronizarTareasHuerfanas(db, opciones.dbPath, opciones.SQL, opciones.kanbanPath);
         }
         return {
             personas,
-            actividades: window.AgendaDB.obtenerActividades(db),
-            miPersonaId: window.AgendaDB.obtenerMiPersonaId(db),
-            vocabulario: window.AgendaDB.actualizarVocabulario(personas, {})
+            actividades: AgendaDB.obtenerActividades(db),
+            miPersonaId: AgendaDB.obtenerMiPersonaId(db),
+            vocabulario: AgendaDB.actualizarVocabulario(personas, {})
         };
     },
 
     _guardarRelaciones: (db, origenId, relaciones) => {
         db.run("DELETE FROM relaciones WHERE origen_id = ?", [origenId]);
         const stmt = db.prepare("INSERT OR IGNORE INTO relaciones (origen_id, destino_id, tipo) VALUES (?, ?, ?)");
-        window.AgendaDB.TIPOS_RELACION.forEach(tipo => {
+        AgendaDB.TIPOS_RELACION.forEach(tipo => {
             (relaciones[tipo] || []).forEach(dest => stmt.run([origenId, dest, tipo]));
         });
         stmt.free();
     },
 
     _sincronizarRelaciones: (db, idOrigen) => {
-        const personas = window.AgendaDB.obtenerTodas(db);
+        const personas = AgendaDB.obtenerTodas(db);
         const origen = personas.find(p => p.id === idOrigen);
         if (!origen) return;
 
-        const tipos = window.AgendaDB.TIPOS_RELACION;
+        const tipos = AgendaDB.TIPOS_RELACION;
         personas.forEach(p => {
             if (p.id === idOrigen) return;
             tipos.forEach(tipo => {
@@ -321,11 +331,11 @@ window.AgendaDB = {
                 const destTiene = (p.relaciones[tipo] || []).includes(idOrigen);
                 if (tiene && !destTiene) {
                     const nueva = { ...p.relaciones, [tipo]: [...(p.relaciones[tipo] || []), idOrigen] };
-                    window.AgendaDB._guardarRelaciones(db, p.id, nueva);
+                    AgendaDB._guardarRelaciones(db, p.id, nueva);
                 }
                 if (!tiene && destTiene) {
                     const nueva = { ...p.relaciones, [tipo]: p.relaciones[tipo].filter(r => r !== idOrigen) };
-                    window.AgendaDB._guardarRelaciones(db, p.id, nueva);
+                    AgendaDB._guardarRelaciones(db, p.id, nueva);
                 }
             });
         });
@@ -341,60 +351,60 @@ window.AgendaDB = {
 
     establecerMiPersona: (db, dbPath, personaId) => {
         db.run("INSERT INTO agenda_config (clave, valor) VALUES ('mi_persona_id', ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor", [personaId || ""]);
-        window.AgendaDB.guardar(db, dbPath);
+        AgendaDB.guardar(db, dbPath);
     },
 
     obtenerPersonaDb: (db, id) => {
         if (!id) return null;
-        return window.AgendaDB.obtenerTodas(db).find(p => p.id === id) || null;
+        return AgendaDB.obtenerTodas(db).find(p => p.id === id) || null;
     },
 
     upsertPersona: (db, dbPath, persona, opciones = {}) => {
-        const base = window.AgendaDB._plantillaPersona();
+        const base = AgendaDB._plantillaPersona();
         const p = {
             ...base, ...persona,
             contacto: { ...base.contacto, ...(persona.contacto || {}) },
             redes: { ...base.redes, ...(persona.redes || {}) },
             relaciones: { ...base.relaciones, ...(persona.relaciones || {}) },
-            actividad_social: window.AgendaDB.normalizarActividad(persona.actividad_social || {}),
+            actividad_social: AgendaDB.normalizarActividad(persona.actividad_social || {}),
             alias: Array.isArray(persona.alias) ? persona.alias : [],
             grupos: Array.isArray(persona.grupos) ? persona.grupos : [],
-            gustos: window.AgendaPreferencias.clonar(persona.gustos),
-            disgustos: window.AgendaPreferencias.clonar(persona.disgustos),
+            gustos: AgendaPreferencias.clonar(persona.gustos),
+            disgustos: AgendaPreferencias.clonar(persona.disgustos),
             mbti: (persona.mbti || "").trim(),
             eneagrama: (persona.eneagrama || "").trim(),
-            color_favorito: window.AgendaPerfil.validarColorHex(persona.color_favorito),
+            color_favorito: AgendaPerfil.validarColorHex(persona.color_favorito),
             foto: (persona.foto || "").trim(),
-            puntos_destacables: window.AgendaPerfil.normalizarLista(persona.puntos_destacables),
+            puntos_destacables: AgendaPerfil.normalizarLista(persona.puntos_destacables),
             iq_min: Math.max(0, parseInt(persona.iq_min, 10) || 0),
             iq_max: Math.max(0, parseInt(persona.iq_max, 10) || 0),
-            inteligencias: window.AgendaPerfil.normalizarInteligencias(persona.inteligencias),
+            inteligencias: AgendaPerfil.normalizarInteligencias(persona.inteligencias),
             moralidad: (persona.moralidad || "").trim(),
             etica: (persona.etica || "").trim(),
             potencial: (persona.potencial || "").trim(),
-            habitos: window.AgendaPerfil.normalizarLista(persona.habitos),
-            debilidades: window.AgendaPerfil.normalizarLista(persona.debilidades),
-            hora_nacimiento: window.AgendaPerfil.validarHoraNacimiento(persona.hora_nacimiento),
+            habitos: AgendaPerfil.normalizarLista(persona.habitos),
+            debilidades: AgendaPerfil.normalizarLista(persona.debilidades),
+            hora_nacimiento: AgendaPerfil.validarHoraNacimiento(persona.hora_nacimiento),
             hora_nacimiento_desconocida: persona.hora_nacimiento_desconocida ? 1 : 0,
-            latitud: window.AgendaPerfil.validarLatitud(persona.latitud),
-            longitud: window.AgendaPerfil.validarLongitud(persona.longitud),
+            latitud: AgendaPerfil.validarLatitud(persona.latitud),
+            longitud: AgendaPerfil.validarLongitud(persona.longitud),
             pais_nacimiento: (persona.pais_nacimiento || "").trim(),
             estado_nacimiento: (persona.estado_nacimiento || "").trim()
         };
 
         if (!p.nombre.trim()) throw new Error("El nombre es obligatorio.");
-        const slug = window.AgendaDB._slugify(p.nombre);
+        const slug = AgendaDB._slugify(p.nombre);
         p.id = p.id || slug;
 
-        const anterior = window.AgendaDB.obtenerPersonaDb(db, p.id);
-        const personas = window.AgendaDB.obtenerTodas(db);
+        const anterior = AgendaDB.obtenerPersonaDb(db, p.id);
+        const personas = AgendaDB.obtenerTodas(db);
 
         const dup = db.prepare("SELECT nombre FROM personas WHERE id != ? AND lower(nombre) = lower(?)");
         dup.bind([p.id, p.nombre]);
         if (dup.step()) { dup.free(); throw new Error(`Ya existe: ${p.nombre}`); }
         dup.free();
 
-        const act = window.AgendaDB.serializarActividad(p.actividad_social);
+        const act = AgendaDB.serializarActividad(p.actividad_social);
         db.run(`INSERT INTO personas (id, nombre, alias, fecha_nacimiento, zona_horaria, ciudad,
             telefono, email, instagram, twitter, facebook, gustos, notas, tags,
             actividad_dias, actividad_semanas, actividad_meses, mbti, eneagrama, relacion_conmigo, color_favorito, disgustos, foto, grupos,
@@ -426,27 +436,27 @@ window.AgendaDB = {
             p.hora_nacimiento, p.hora_nacimiento_desconocida, p.latitud, p.longitud, p.pais_nacimiento, p.estado_nacimiento
         ]);
 
-        p.relaciones = window.AgendaDB.normalizarRelacionesExclusivas(p.relaciones);
+        p.relaciones = AgendaDB.normalizarRelacionesExclusivas(p.relaciones);
 
-        window.AgendaDB._guardarRelaciones(db, p.id, p.relaciones);
-        window.AgendaDB._sincronizarRelaciones(db, p.id);
+        AgendaDB._guardarRelaciones(db, p.id, p.relaciones);
+        AgendaDB._sincronizarRelaciones(db, p.id);
 
-        if (!opciones.omitirHistorial && window.AgendaHistorial) {
-            window.AgendaHistorial.registrarCambios(db, p.id, anterior, p, personas);
+        if (!opciones.omitirHistorial && AgendaHistorial) {
+            AgendaHistorial.registrarCambios(db, p.id, anterior, p, personas);
         }
-        window.AgendaDB.guardar(db, dbPath);
+        AgendaDB.guardar(db, dbPath);
         return p;
     },
 
     eliminarPersona: (db, dbPath, id) => {
         db.run("DELETE FROM personas WHERE id = ?", [id]);
-        window.AgendaDB.guardar(db, dbPath);
+        AgendaDB.guardar(db, dbPath);
     },
 
     obtenerPorId: (personas, id) => personas.find(p => p.id === id),
 
     nombreDe: (personas, id) => {
-        const p = window.AgendaDB.obtenerPorId(personas, id);
+        const p = AgendaDB.obtenerPorId(personas, id);
         return p ? p.nombre : id;
     },
 
@@ -475,7 +485,7 @@ window.AgendaDB = {
     },
 
     serializarActividad: (act) => {
-        const { tipo, valor } = window.AgendaDB.normalizarActividad(act);
+        const { tipo, valor } = AgendaDB.normalizarActividad(act);
         const v = valor > 0 ? valor : 0;
         return {
             dias: tipo === "dias" ? v : 0,
@@ -485,7 +495,7 @@ window.AgendaDB = {
     },
 
     formatearActividadSocial: (act) => {
-        const { tipo, valor } = window.AgendaDB.normalizarActividad(act);
+        const { tipo, valor } = AgendaDB.normalizarActividad(act);
         if (!valor) return "Sin frecuencia definida";
         if (tipo === "dias") return `Cada ${valor} día${valor > 1 ? "s" : ""}`;
         if (tipo === "semanas") return `Cada ${valor} semana${valor > 1 ? "s" : ""}`;
@@ -498,31 +508,31 @@ window.AgendaDB = {
         if (stmt.step()) raw = stmt.get()[0] || "";
         stmt.free();
         try {
-            return window.AgendaPerfil.normalizarRangosIq(JSON.parse(raw || "null"));
+            return AgendaPerfil.normalizarRangosIq(JSON.parse(raw || "null"));
         } catch {
-            return window.AgendaPerfil.normalizarRangosIq(null);
+            return AgendaPerfil.normalizarRangosIq(null);
         }
     },
 
     guardarRangosIq: (db, dbPath, rangos) => {
-        const limpios = window.AgendaPerfil.normalizarRangosIq(rangos);
+        const limpios = AgendaPerfil.normalizarRangosIq(rangos);
         db.run(
             "INSERT INTO agenda_config (clave, valor) VALUES ('iq_rangos', ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor",
             [JSON.stringify(limpios)]
         );
-        window.AgendaDB.guardar(db, dbPath);
+        AgendaDB.guardar(db, dbPath);
         return limpios;
     },
 
     actualizarVocabulario: (personas, vocabulario) => {
-        const pref = window.AgendaPreferencias.recolectarVocabulario(personas);
+        const pref = AgendaPreferencias.recolectarVocabulario(personas);
         const sets = {
             ciudades: new Set(vocabulario.ciudades || []),
             paises_nacimiento: new Set(vocabulario.paises_nacimiento || []),
             estados_nacimiento: new Set(vocabulario.estados_nacimiento || []),
             zonas_horarias: new Set(vocabulario.zonas_horarias || ["America/Mexico_City"]),
             grupos: new Set(vocabulario.grupos || []),
-            puntos_destacables: new Set(window.AgendaPerfil.PUNTOS_SUGERIDOS),
+            puntos_destacables: new Set(AgendaPerfil.PUNTOS_SUGERIDOS),
             habitos: new Set(vocabulario.habitos || []),
             debilidades: new Set(vocabulario.debilidades || [])
         };
@@ -575,7 +585,7 @@ window.AgendaDB = {
         if (count > 0) return false;
 
         let personas = [];
-        const file = app.vault.getAbstractFileByPath(window.AgendaDB.NOTE_PATH);
+        const file = app.vault.getAbstractFileByPath(AgendaDB.NOTE_PATH);
         if (file) {
             const { parseYaml } = require("obsidian");
             const contenido = await app.vault.read(file);
@@ -588,31 +598,31 @@ window.AgendaDB = {
         // Fase 1: personas sin relaciones (evita FK rotas)
         personas.forEach(p => {
             const { relaciones, ...rest } = p;
-            window.AgendaDB.upsertPersona(db, dbPath, {
+            AgendaDB.upsertPersona(db, dbPath, {
                 ...rest,
-                id: p.id || window.AgendaDB._slugify(p.nombre),
+                id: p.id || AgendaDB._slugify(p.nombre),
                 actividad_social: p.actividad_social || { tipo: "semanas", valor: 0 },
-                relaciones: window.AgendaDB._relacionesVacias()
+                relaciones: AgendaDB._relacionesVacias()
             }, { omitirHistorial: true });
         });
 
         // Fase 2: relaciones
         personas.forEach(p => {
-            const id = p.id || window.AgendaDB._slugify(p.nombre);
+            const id = p.id || AgendaDB._slugify(p.nombre);
             if (p.relaciones) {
-                window.AgendaDB._guardarRelaciones(db, id, p.relaciones);
-                window.AgendaDB._sincronizarRelaciones(db, id);
+                AgendaDB._guardarRelaciones(db, id, p.relaciones);
+                AgendaDB._sincronizarRelaciones(db, id);
             }
         });
-        window.AgendaDB.guardar(db, dbPath);
+        AgendaDB.guardar(db, dbPath);
         return true;
     },
 
-    _filaAActividad: (r) => window.AgendaCalendario?.normalizar({
+    _filaAActividad: (r) => AgendaCalendario?.normalizar({
         id: r[0], titulo: r[1], tipo: r[2], icono: r[3], fecha: r[4], fecha_fin: r[5],
         estado: r[6], notas: r[7],
-        persona_ids: window.AgendaDB._json(r[8], []),
-        grupos: window.AgendaDB._json(r[9], []),
+        persona_ids: AgendaDB._json(r[8], []),
+        grupos: AgendaDB._json(r[9], []),
         tarea_kanban_id: r[10], creado_en: r[11], iniciado_en: r[12],
         terminado_en: r[13], descartado_en: r[14]
     }) || {},
@@ -622,46 +632,46 @@ window.AgendaDB = {
             persona_ids, grupos, tarea_kanban_id, creado_en, iniciado_en, terminado_en, descartado_en
             FROM agenda_actividades ORDER BY fecha DESC, creado_en DESC`);
         const rows = [];
-        while (stmt.step()) rows.push(window.AgendaDB._filaAActividad(stmt.get()));
+        while (stmt.step()) rows.push(AgendaDB._filaAActividad(stmt.get()));
         stmt.free();
         return rows;
     },
 
-    _bridge: () => window.TaskBoardBridge,
+    _bridge: () => getTaskBoardBridge(),
 
-    _kanbanDisponible: () => window.TaskBoardBridge?.isAvailable?.() ?? false,
+    _kanbanDisponible: () => getTaskBoardBridge()?.isAvailable?.() ?? false,
 
     _sincronizarTareasHuerfanas: (db, dbPath, SQL, kanbanPath) => {
-        if (!window.AgendaDB._kanbanDisponible()) return;
-        const personas = window.AgendaDB.obtenerTodas(db);
+        if (!AgendaDB._kanbanDisponible()) return;
+        const personas = AgendaDB.obtenerTodas(db);
         let cambio = false;
-        window.AgendaDB.obtenerActividades(db).forEach(act => {
+        AgendaDB.obtenerActividades(db).forEach(act => {
             if (act.tipo !== "tarea" || act.tarea_kanban_id) return;
-            const id = window.AgendaDB._sincronizarKanban(act, personas, SQL, kanbanPath, dbPath);
+            const id = AgendaDB._sincronizarKanban(act, personas, SQL, kanbanPath, dbPath);
             if (id) {
                 act.tarea_kanban_id = id;
-                window.AgendaDB._guardarActividadDb(db, act);
+                AgendaDB._guardarActividadDb(db, act);
                 cambio = true;
             }
         });
-        if (cambio) window.AgendaDB.guardar(db, dbPath);
+        if (cambio) AgendaDB.guardar(db, dbPath);
     },
 
     sincronizarEstadosDesdeKanban: (db, dbPath, SQL, kanbanPath) => {
-        const bridge = window.AgendaDB._bridge();
+        const bridge = AgendaDB._bridge();
         if (!bridge?.isAvailable()) return;
         const tareas = bridge.obtenerTodas();
         const mapa = new Map(tareas.map(t => [t.id, t]));
-        window.AgendaDB.obtenerActividades(db).forEach(act => {
+        AgendaDB.obtenerActividades(db).forEach(act => {
             if (act.tipo !== "tarea" || !act.tarea_kanban_id) return;
             const kt = mapa.get(act.tarea_kanban_id);
             if (!kt) return;
-            const nuevo = window.AgendaCalendario.estadoDesdeKanban(kt.estado);
+            const nuevo = AgendaCalendario.estadoDesdeKanban(kt.estado);
             if (nuevo === act.estado) return;
-            const actualizado = window.AgendaCalendario.aplicarEstado({ ...act, estado: nuevo });
-            window.AgendaDB._guardarActividadDb(db, actualizado);
+            const actualizado = AgendaCalendario.aplicarEstado({ ...act, estado: nuevo });
+            AgendaDB._guardarActividadDb(db, actualizado);
         });
-        window.AgendaDB.guardar(db, dbPath);
+        AgendaDB.guardar(db, dbPath);
     },
 
     _guardarActividadDb: (db, act) => {
@@ -681,7 +691,7 @@ window.AgendaDB = {
     },
 
     _sincronizarKanban: (act, personas, SQL, kanbanPath, dbPath) => {
-        const bridge = window.AgendaDB._bridge();
+        const bridge = AgendaDB._bridge();
         if (!bridge?.isAvailable()) return act.tarea_kanban_id || 0;
 
         if (act.tipo !== "tarea") {
@@ -692,11 +702,11 @@ window.AgendaDB = {
             return 0;
         }
 
-        const proyecto = window.AgendaCalendario.resolverProyecto(act, personas);
+        const proyecto = AgendaCalendario.resolverProyecto(act, personas);
         const payload = {
             texto: act.titulo,
             proyecto,
-            estado: window.AgendaCalendario.estadoAKanban(act.estado),
+            estado: AgendaCalendario.estadoAKanban(act.estado),
             nota: bridge.notaConMarcaAgenda(act.notas, act.id),
             requisito_ids: [],
             subtareas: [],
@@ -716,20 +726,20 @@ window.AgendaDB = {
     },
 
     upsertActividad: (db, dbPath, datos, opciones = {}) => {
-        const personas = opciones.personas || window.AgendaDB.obtenerTodas(db);
-        let act = window.AgendaCalendario.normalizar(datos);
+        const personas = opciones.personas || AgendaDB.obtenerTodas(db);
+        let act = AgendaCalendario.normalizar(datos);
         if (!act.titulo) throw new Error("El título es obligatorio.");
         if (!act.fecha) throw new Error("La fecha es obligatoria.");
 
-        const miId = window.AgendaDB.obtenerMiPersonaId(db);
+        const miId = AgendaDB.obtenerMiPersonaId(db);
         if (!act.persona_ids.length && miId) act.persona_ids = [miId];
 
-        const anterior = act.id ? window.AgendaDB.obtenerActividades(db).find(a => a.id === act.id) : null;
-        if (!act.id) act.id = window.AgendaDB._slugify(act.titulo) + "-" + Date.now().toString(36);
-        if (!act.creado_en) act.creado_en = window.AgendaCalendario._ahora();
+        const anterior = act.id ? AgendaDB.obtenerActividades(db).find(a => a.id === act.id) : null;
+        if (!act.id) act.id = AgendaDB._slugify(act.titulo) + "-" + Date.now().toString(36);
+        if (!act.creado_en) act.creado_en = AgendaCalendario._ahora();
 
         if (anterior && anterior.estado !== act.estado) {
-            act = window.AgendaCalendario.aplicarEstado(act, act.estado);
+            act = AgendaCalendario.aplicarEstado(act, act.estado);
         } else if (anterior) {
             act.iniciado_en = anterior.iniciado_en;
             act.terminado_en = anterior.terminado_en;
@@ -738,13 +748,13 @@ window.AgendaDB = {
         }
 
         if (!opciones.omitirKanban && opciones.SQL && opciones.kanbanPath) {
-            act.tarea_kanban_id = window.AgendaDB._sincronizarKanban(
+            act.tarea_kanban_id = AgendaDB._sincronizarKanban(
                 act, personas, opciones.SQL, opciones.kanbanPath, dbPath
             );
         }
 
-        window.AgendaDB._guardarActividadDb(db, act);
-        window.AgendaDB.guardar(db, dbPath);
+        AgendaDB._guardarActividadDb(db, act);
+        AgendaDB.guardar(db, dbPath);
 
         if (act.tipo === "tarea" && !act.tarea_kanban_id && !opciones.omitirKanban) {
             throw new Error("No se pudo crear la tarea en Task Board. Activa el plugin vault-task-board e intenta de nuevo.");
@@ -754,12 +764,12 @@ window.AgendaDB = {
     },
 
     eliminarActividad: (db, dbPath, id, opciones = {}) => {
-        const act = window.AgendaDB.obtenerActividades(db).find(a => a.id === id);
+        const act = AgendaDB.obtenerActividades(db).find(a => a.id === id);
         if (!act) return;
-        if (act.tarea_kanban_id && opciones.SQL && opciones.kanbanPath && window.AgendaDB._kanbanDisponible()) {
-            window.AgendaDB._bridge().eliminarTarea(act.tarea_kanban_id);
+        if (act.tarea_kanban_id && opciones.SQL && opciones.kanbanPath && AgendaDB._kanbanDisponible()) {
+            AgendaDB._bridge().eliminarTarea(act.tarea_kanban_id);
         }
         db.run("DELETE FROM agenda_actividades WHERE id = ?", [id]);
-        window.AgendaDB.guardar(db, dbPath);
+        AgendaDB.guardar(db, dbPath);
     }
 };

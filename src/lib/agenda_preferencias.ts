@@ -1,6 +1,10 @@
+/* agenda_preferencias.ts — migrado a módulo TS */
+// @ts-nocheck
+
+
 /* agenda_preferencias.js - Gustos y disgustos por categoría reutilizable */
 
-window.AgendaPreferencias = {
+export const AgendaPreferencias = {
     TIPOS_SUGERIDOS: ["comida", "música", "películas", "series", "actividades", "deportes", "otros"],
 
     normalizar: (val) => {
@@ -29,14 +33,14 @@ window.AgendaPreferencias = {
     },
 
     clonar: (val) => {
-        const n = window.AgendaPreferencias.normalizar(val);
+        const n = AgendaPreferencias.normalizar(val);
         const out = {};
         Object.keys(n).forEach(t => { out[t] = [...n[t]]; });
         return out;
     },
 
     serializarTexto: (val) => {
-        const n = window.AgendaPreferencias.normalizar(val);
+        const n = AgendaPreferencias.normalizar(val);
         return Object.keys(n).sort((a, b) => a.localeCompare(b, "es")).map(tipo => {
             const elems = n[tipo];
             if (!elems.length) return `${tipo}: (vacío)`;
@@ -45,7 +49,7 @@ window.AgendaPreferencias = {
     },
 
     aplanarTexto: (val) => {
-        const n = window.AgendaPreferencias.normalizar(val);
+        const n = AgendaPreferencias.normalizar(val);
         const partes = [];
         Object.entries(n).forEach(([tipo, elems]) => {
             partes.push(tipo);
@@ -55,13 +59,13 @@ window.AgendaPreferencias = {
     },
 
     contarElementos: (val) => {
-        const n = window.AgendaPreferencias.normalizar(val);
+        const n = AgendaPreferencias.normalizar(val);
         return Object.values(n).reduce((s, arr) => s + arr.length, 0);
     },
 
     coincideFiltro: (val, tipo, elemento = "") => {
         if (!tipo) return true;
-        const n = window.AgendaPreferencias.normalizar(val);
+        const n = AgendaPreferencias.normalizar(val);
         const lista = n[tipo];
         if (!lista?.length) return false;
         if (!elemento) return true;
@@ -69,13 +73,13 @@ window.AgendaPreferencias = {
     },
 
     recolectarVocabulario: (personas) => {
-        const tipos = new Set(window.AgendaPreferencias.TIPOS_SUGERIDOS);
+        const tipos = new Set(AgendaPreferencias.TIPOS_SUGERIDOS);
         const elementosPorTipo = {};
         const todosGusto = new Set();
         const todosDisgusto = new Set();
 
         const add = (prefs, todosSet) => {
-            Object.entries(window.AgendaPreferencias.normalizar(prefs)).forEach(([tipo, elems]) => {
+            Object.entries(AgendaPreferencias.normalizar(prefs)).forEach(([tipo, elems]) => {
                 tipos.add(tipo);
                 if (!elementosPorTipo[tipo]) elementosPorTipo[tipo] = new Set();
                 elems.forEach(e => {

@@ -1,6 +1,12 @@
+/* agenda_historial.ts — migrado a módulo TS */
+// @ts-nocheck
+import { AgendaDB } from "./agenda_db";
+import { AgendaPerfil } from "./agenda_perfil";
+import { AgendaPreferencias } from "./agenda_preferencias";
+
 /* agenda_historial.js - Registro y visualización de cambios por persona */
 
-window.AgendaHistorial = {
+export const AgendaHistorial = {
     SCHEMA: `CREATE TABLE IF NOT EXISTS persona_historial (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         persona_id TEXT NOT NULL,
@@ -49,7 +55,7 @@ window.AgendaHistorial = {
         _creacion: "Registro"
     },
 
-    init: (db) => { db.run(window.AgendaHistorial.SCHEMA); },
+    init: (db) => { db.run(AgendaHistorial.SCHEMA); },
 
     _ahora: () => new Date().toISOString(),
 
@@ -59,21 +65,21 @@ window.AgendaHistorial = {
             return Array.isArray(valor) ? valor.join(", ") : String(valor);
         }
         if (campo === "gustos" || campo === "disgustos") {
-            return window.AgendaPreferencias.serializarTexto(valor);
+            return AgendaPreferencias.serializarTexto(valor);
         }
         if (campo === "puntos_destacables" || campo === "habitos" || campo === "debilidades") {
-            return window.AgendaPerfil.normalizarLista(valor).join(", ") || "(vacío)";
+            return AgendaPerfil.normalizarLista(valor).join(", ") || "(vacío)";
         }
         if (campo === "iq_aproximado") {
-            const txt = window.AgendaPerfil.formatearIq(valor?.min, valor?.max);
-            const etq = window.AgendaPerfil.etiquetaRangoIq(valor?.min, valor?.max);
+            const txt = AgendaPerfil.formatearIq(valor?.min, valor?.max);
+            const etq = AgendaPerfil.etiquetaRangoIq(valor?.min, valor?.max);
             return etq ? `${txt} (${etq})` : (txt || "(vacío)");
         }
         if (campo === "inteligencias") {
-            return window.AgendaPerfil.serializarInteligencias(valor);
+            return AgendaPerfil.serializarInteligencias(valor);
         }
         if (campo === "actividad_social") {
-            return window.AgendaDB.formatearActividadSocial(valor);
+            return AgendaDB.formatearActividadSocial(valor);
         }
         if (campo === "hora_nacimiento_desconocida") {
             return valor ? "Sí" : "No";
@@ -84,10 +90,10 @@ window.AgendaHistorial = {
         }
         if (campo === "relaciones") {
             const partes = [];
-            (window.AgendaDB?.TIPOS_RELACION || []).forEach(t => {
+            (AgendaDB?.TIPOS_RELACION || []).forEach(t => {
                 const ids = valor?.[t] || [];
                 if (ids.length) {
-                    const nombres = ids.map(id => window.AgendaDB.nombreDe(personas, id)).join(", ");
+                    const nombres = ids.map(id => AgendaDB.nombreDe(personas, id)).join(", ");
                     partes.push(`${t}: ${nombres}`);
                 }
             });
@@ -134,11 +140,11 @@ window.AgendaHistorial = {
     }),
 
     registrarCambios: (db, personaId, anterior, nuevo, personas) => {
-        const campos = Object.keys(window.AgendaHistorial.ETIQUETAS).filter(k => k !== "_creacion");
+        const campos = Object.keys(AgendaHistorial.ETIQUETAS).filter(k => k !== "_creacion");
         const stmt = db.prepare(
             "INSERT INTO persona_historial (persona_id, fecha, campo, valor_anterior, valor_nuevo) VALUES (?,?,?,?,?)"
         );
-        const fecha = window.AgendaHistorial._ahora();
+        const fecha = AgendaHistorial._ahora();
 
         if (!anterior) {
             stmt.run([personaId, fecha, "_creacion", "", "Persona creada en la agenda"]);
@@ -146,12 +152,12 @@ window.AgendaHistorial = {
             return;
         }
 
-        const snapA = window.AgendaHistorial._snapshot(anterior, personas);
-        const snapN = window.AgendaHistorial._snapshot(nuevo, personas);
+        const snapA = AgendaHistorial._snapshot(anterior, personas);
+        const snapN = AgendaHistorial._snapshot(nuevo, personas);
 
         campos.forEach(campo => {
-            const va = window.AgendaHistorial._serializar(campo, snapA[campo], personas);
-            const vn = window.AgendaHistorial._serializar(campo, snapN[campo], personas);
+            const va = AgendaHistorial._serializar(campo, snapA[campo], personas);
+            const vn = AgendaHistorial._serializar(campo, snapN[campo], personas);
             if (va !== vn) stmt.run([personaId, fecha, campo, va, vn]);
         });
         stmt.free();
@@ -173,7 +179,7 @@ window.AgendaHistorial = {
 
     eliminar: (db, dbPath, entradaId) => {
         db.run("DELETE FROM persona_historial WHERE id = ?", [entradaId]);
-        window.AgendaDB.guardar(db, dbPath);
+        AgendaDB.guardar(db, dbPath);
     },
 
     formatearFecha: (iso) => {
@@ -186,5 +192,5 @@ window.AgendaHistorial = {
         } catch { return iso; }
     },
 
-    etiquetaCampo: (campo) => window.AgendaHistorial.ETIQUETAS[campo] || campo
+    etiquetaCampo: (campo) => AgendaHistorial.ETIQUETAS[campo] || campo
 };

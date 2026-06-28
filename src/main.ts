@@ -1,58 +1,22 @@
-import { ItemView, Notice, Plugin, WorkspaceLeaf } from "obsidian";
-import "./legacy";
+import { ItemView, Notice, Plugin, TFile, WorkspaceLeaf } from "obsidian";
+import { setTaskBoardBridge } from "./bridge-registry";
+import { ScriptsRuntime } from "./runtime/scripts-runtime";
+import { AgendaDB } from "./lib/agenda_db";
+import { AgendaUI } from "./lib/agenda_ui";
+import type { TaskBoardApi, TaskBoardPluginLike } from "./types";
+
+import "./lib/agenda_modals";
 
 const PLUGIN_ID = "vault-social-agenda";
 const PLUGIN_ROOT = `.obsidian/plugins/${PLUGIN_ID}`;
 const LEGACY_DB = ".obsidian/scripts/agenda_social.db";
-
-interface TaskBoardApi {
-    PLUGIN_ID: string;
-    isAvailable: () => boolean;
-    dbPath: () => string;
-    notaConMarcaAgenda: (notas: string, agendaId: string) => string;
-    buscarIdPorAgendaId: (agendaId: string) => number | null | undefined;
-    obtenerTodas: () => Array<{ id: number; estado: string }>;
-    crearTarea: (datos: Record<string, unknown>) => number;
-    actualizarTarea: (tareaId: number, datos: Record<string, unknown>) => number | undefined;
-    eliminarTarea: (tareaId: number) => void;
-    emitChange: (app: unknown) => void;
-}
-
-declare global {
-    interface Window {
-        ScriptsRuntime: {
-            configure: (app: unknown, opts?: { sqlJsRel?: string; sqlWasmRel?: string }) => void;
-            initSqlJs: () => Promise<unknown>;
-            puedeUsarFs: () => boolean;
-            leerBinarioAsync: (path: string) => Promise<Uint8Array | null>;
-            migrarArchivoBinario: (legacy: string, dest: string) => Promise<boolean>;
-        };
-        AgendaDB: {
-            DB_RELATIVE: string;
-            KANBAN_DB_RELATIVE: string;
-            init: (SQL: unknown, dbPath: string) => Promise<unknown>;
-            migrarDesdeFrontmatterSiVacio: (app: unknown, db: unknown, dbPath: string) => Promise<boolean>;
-        };
-        AgendaUI: {
-            injectStyles: () => void;
-            renderDashboard: (
-                container: HTMLElement,
-                db: unknown,
-                dbPath: string,
-                onRefresh: () => Promise<void>,
-                ctx: Record<string, unknown>
-            ) => Promise<void>;
-        };
-        TaskBoardBridge?: TaskBoardApi;
-    }
-}
+const TASK_BOARD_ID = "vault-task-board";
 
 export const VIEW_TYPE = "vault-social-agenda-dashboard";
-const TASK_BOARD_ID = "vault-task-board";
 
 interface AppWithPlugins {
     plugins: {
-        getPlugin(id: string): { api?: TaskBoardApi } | null;
+        getPlugin(id: string): TaskBoardPluginLike | null;
     };
 }
 
@@ -60,24 +24,23 @@ export default class SocialAgendaPlugin extends Plugin {
     private sql: unknown = null;
 
     async onload(): Promise<void> {
-        window.ScriptsRuntime.configure(this.app, {
+        ScriptsRuntime.configure(this.app, {
             sqlJsRel: `${PLUGIN_ROOT}/assets/sql-wasm.js`,
             sqlWasmRel: `${PLUGIN_ROOT}/assets/sql-wasm.wasm`
         });
 
-        const dbPath = window.AgendaDB.DB_RELATIVE;
-        if (await window.ScriptsRuntime.migrarArchivoBinario(LEGACY_DB, dbPath)) {
+        if (await ScriptsRuntime.migrarArchivoBinario(LEGACY_DB, AgendaDB.DB_RELATIVE)) {
             new Notice("Social Agenda: base de datos migrada a plugins-data.");
         }
 
         this.conectarTaskBoard();
 
         this.registerEvent(
-            // @ts-expect-error evento personalizado entre plugins locales
+            // @ts-expect-error evento personalizado
             this.app.workspace.on("vault-task-board:ready", () => this.conectarTaskBoard())
         );
         this.registerEvent(
-            // @ts-expect-error evento personalizado entre plugins locales
+            // @ts-expect-error evento personalizado
             this.app.workspace.on("vault-task-board:changed", () => {
                 const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0];
                 if (leaf?.view instanceof SocialAgendaView) void leaf.view.refresh();
@@ -94,30 +57,22 @@ export default class SocialAgendaPlugin extends Plugin {
     }
 
     conectarTaskBoard(): void {
-        const plugins = (this.app as unknown as AppWithPlugins).plugins;
-        const plugin = plugins.getPlugin(TASK_BOARD_ID) as { api?: TaskBoardApi } | null;
-        if (plugin?.api) {
-            window.TaskBoardBridge = plugin.api;
-        }
+        const plugin = (this.app as unknown as AppWithPlugins).plugins.getPlugin(TASK_BOARD_ID);
+        setTaskBoardBridge(plugin?.api);
     }
 
     async ensureSql(): Promise<unknown> {
-        if (!this.sql) this.sql = await window.ScriptsRuntime.initSqlJs();
+        if (!this.sql) this.sql = await ScriptsRuntime.initSqlJs();
         return this.sql;
     }
 
-    kanbanDisponible(): boolean {
-        return !!window.TaskBoardBridge?.isAvailable();
-    }
-
     private async activateView(): Promise<void> {
-        const { workspace } = this.app;
-        let leaf = workspace.getLeavesOfType(VIEW_TYPE)[0];
+        let leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0];
         if (!leaf) {
-            leaf = workspace.getLeaf(true);
+            leaf = this.app.workspace.getLeaf(true);
             await leaf.setViewState({ type: VIEW_TYPE, active: true });
         }
-        workspace.revealLeaf(leaf);
+        this.app.workspace.revealLeaf(leaf);
     }
 }
 
@@ -153,32 +108,33 @@ export class SocialAgendaView extends ItemView {
 
         this.plugin.conectarTaskBoard();
 
-        if (!this.plugin.kanbanDisponible()) {
+        const { getTaskBoardBridge } = await import("./bridge-registry");
+        if (!getTaskBoardBridge()?.isAvailable()) {
             root.createEl("p", {
-                text: "⚠️ Activa el plugin local vault-task-board para sincronizar tareas con el tablero."
+                text: "⚠️ Activa vault-task-board para sincronizar tareas con el tablero."
             });
         }
 
         try {
             const SQL = await this.plugin.ensureSql();
-            const dbPath = window.AgendaDB.DB_RELATIVE;
-            const kanbanPath = window.AgendaDB.KANBAN_DB_RELATIVE;
+            const dbPath = AgendaDB.DB_RELATIVE;
+            const kanbanPath = AgendaDB.KANBAN_DB_RELATIVE;
 
-            if (!window.ScriptsRuntime.puedeUsarFs()) {
-                await window.ScriptsRuntime.leerBinarioAsync(dbPath);
+            if (!ScriptsRuntime.puedeUsarFs()) {
+                await ScriptsRuntime.leerBinarioAsync(dbPath);
             }
 
-            let db = await window.AgendaDB.init(SQL, dbPath);
-            const migrado = await window.AgendaDB.migrarDesdeFrontmatterSiVacio(this.app, db, dbPath);
+            let db = await AgendaDB.init(SQL, dbPath);
+            const migrado = await AgendaDB.migrarDesdeFrontmatterSiVacio(this.app, db, dbPath);
             if (migrado) new Notice("📦 Datos migrados del frontmatter a SQLite");
 
-            window.AgendaUI.injectStyles();
+            AgendaUI.injectStyles();
 
             const ejecutarRender = async () => {
                 this.plugin.conectarTaskBoard();
-                db = await window.AgendaDB.init(SQL, dbPath);
+                db = await AgendaDB.init(SQL, dbPath);
                 root.empty();
-                await window.AgendaUI.renderDashboard(root, db, dbPath, ejecutarRender, {
+                await AgendaUI.renderDashboard(root, db, dbPath, ejecutarRender, {
                     SQL,
                     kanbanPath,
                     dbPath

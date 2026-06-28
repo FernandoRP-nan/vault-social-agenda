@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.0.0] - 2026-06-27
+
+### Changed
+- Migración completa a TypeScript; bridge vía `bridge-registry` en lugar de `window`.
+
 ## [1.1.0] - 2026-06-27
 
 ### Added
