@@ -1,6 +1,6 @@
 {
   "name": "vault-social-agenda",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Agenda de contactos, relaciones y calendario social.",
   "main": "main.js",
   "scripts": {
@@ -13,5 +13,8 @@
     "esbuild": "0.25.5",
     "obsidian": "latest",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "sql.js": "^1.14.1"
   }
 }

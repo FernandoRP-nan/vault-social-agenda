@@ -1,6 +1,10 @@
 import { ItemView, Notice, Plugin, WorkspaceLeaf } from "obsidian";
 import "./legacy";
 
+const PLUGIN_ID = "vault-social-agenda";
+const PLUGIN_ROOT = `.obsidian/plugins/${PLUGIN_ID}`;
+const LEGACY_DB = ".obsidian/scripts/agenda_social.db";
+
 interface TaskBoardApi {
     PLUGIN_ID: string;
     isAvailable: () => boolean;
@@ -17,10 +21,11 @@ interface TaskBoardApi {
 declare global {
     interface Window {
         ScriptsRuntime: {
-            configure: (app: unknown) => void;
+            configure: (app: unknown, opts?: { sqlJsRel?: string; sqlWasmRel?: string }) => void;
             initSqlJs: () => Promise<unknown>;
             puedeUsarFs: () => boolean;
             leerBinarioAsync: (path: string) => Promise<Uint8Array | null>;
+            migrarArchivoBinario: (legacy: string, dest: string) => Promise<boolean>;
         };
         AgendaDB: {
             DB_RELATIVE: string;
@@ -55,7 +60,16 @@ export default class SocialAgendaPlugin extends Plugin {
     private sql: unknown = null;
 
     async onload(): Promise<void> {
-        window.ScriptsRuntime.configure(this.app);
+        window.ScriptsRuntime.configure(this.app, {
+            sqlJsRel: `${PLUGIN_ROOT}/assets/sql-wasm.js`,
+            sqlWasmRel: `${PLUGIN_ROOT}/assets/sql-wasm.wasm`
+        });
+
+        const dbPath = window.AgendaDB.DB_RELATIVE;
+        if (await window.ScriptsRuntime.migrarArchivoBinario(LEGACY_DB, dbPath)) {
+            new Notice("Social Agenda: base de datos migrada a plugins-data.");
+        }
+
         this.conectarTaskBoard();
 
         this.registerEvent(
@@ -151,7 +165,7 @@ export class SocialAgendaView extends ItemView {
             const kanbanPath = window.AgendaDB.KANBAN_DB_RELATIVE;
 
             if (!window.ScriptsRuntime.puedeUsarFs()) {
-                await window.ScriptsRuntime.leerBinarioAsync(kanbanPath);
+                await window.ScriptsRuntime.leerBinarioAsync(dbPath);
             }
 
             let db = await window.AgendaDB.init(SQL, dbPath);

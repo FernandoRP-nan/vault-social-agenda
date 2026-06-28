@@ -1,8 +1,8 @@
 /* agenda_db.js - Persistencia SQLite para agenda social */
 
 window.AgendaDB = {
-    DB_RELATIVE: ".obsidian/scripts/agenda_social.db",
-    KANBAN_DB_RELATIVE: ".obsidian/scripts/kanban_tareas.db",
+    DB_RELATIVE: ".obsidian/plugins-data/vault-social-agenda/agenda_social.db",
+    KANBAN_DB_RELATIVE: ".obsidian/plugins-data/vault-task-board/kanban_tareas.db",
     NOTE_PATH: "Plugins/vault-social-agenda/dashboard",
     FOTO_CARPETA: "Adjuntos/Agenda Social",
 
