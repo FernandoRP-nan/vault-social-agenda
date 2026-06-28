@@ -1,8 +1,12 @@
 {
   "name": "vault-social-agenda",
   "version": "1.1.0",
-  "description": "Agenda de contactos, relaciones y calendario social.",
+  "description": "Personal contact agenda with relationships, activities, and optional task-board sync.",
   "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FernandoRP-nan/vault-social-agenda.git"
+  },
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
